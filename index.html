@@ -1,0 +1,4532 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NEUROLEX 3D | Interactive NLP Tokenization & Word Embedding Visualizer</title>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  
+  <!-- Three.js CDN -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <!-- Three.js OrbitControls CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+  
+  <!-- Plotly.js CDN -->
+  <script src="https://cdn.plot.ly/plotly-2.29.1.min.js"></script>
+
+  <style>
+    /* ==========================================================================
+       THEME & COLOR SYSTEM (Dark Futuristic AI Theme)
+       ========================================================================== */
+    :root {
+      --bg-dark: #070913;
+      --bg-surface: #0e1326;
+      --bg-card: rgba(16, 22, 44, 0.72);
+      --bg-card-hover: rgba(24, 33, 64, 0.85);
+      --border-subtle: rgba(255, 255, 255, 0.08);
+      --border-glow-cyan: rgba(0, 245, 255, 0.3);
+      --border-glow-purple: rgba(168, 85, 247, 0.35);
+      
+      --accent-cyan: #00f5ff;
+      --accent-blue: #3b82f6;
+      --accent-purple: #a855f7;
+      --accent-violet: #8b5cf6;
+      --accent-magenta: #ec4899;
+      --accent-emerald: #10b981;
+      --accent-amber: #f59e0b;
+      --accent-rose: #f43f5e;
+      
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      
+      --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --font-display: 'Space Grotesk', sans-serif;
+      
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 18px;
+      --radius-xl: 24px;
+      --shadow-glass: 0 10px 30px rgba(0, 0, 0, 0.5);
+      --shadow-glow: 0 0 25px rgba(0, 245, 255, 0.25);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      background-color: var(--bg-dark);
+      color: var(--text-main);
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      overflow-x: hidden;
+      line-height: 1.6;
+      background-image: 
+        radial-gradient(circle at 10% 10%, rgba(59, 130, 246, 0.12) 0%, transparent 45%),
+        radial-gradient(circle at 90% 15%, rgba(168, 85, 247, 0.14) 0%, transparent 45%),
+        radial-gradient(circle at 50% 60%, rgba(0, 245, 255, 0.07) 0%, transparent 55%),
+        radial-gradient(circle at 80% 90%, rgba(236, 72, 153, 0.08) 0%, transparent 45%);
+      background-attachment: fixed;
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+    ::-webkit-scrollbar-track {
+      background: var(--bg-dark);
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(255, 255, 255, 0.16);
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: var(--accent-cyan);
+    }
+
+    /* Glassmorphism Classes */
+    .glass-card {
+      background: var(--bg-card);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-glass);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .glass-card:hover {
+      border-color: rgba(255, 255, 255, 0.16);
+    }
+
+    /* Top Sticky Navigation */
+    .top-navbar {
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      background: rgba(7, 9, 19, 0.88);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border-subtle);
+      padding: 0.8rem 2rem;
+    }
+
+    .nav-inner {
+      max-width: 1550px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1.5rem;
+    }
+
+    .brand-group {
+      display: flex;
+      align-items: center;
+      gap: 0.9rem;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    .brand-logo-badge {
+      width: 44px;
+      height: 44px;
+      border-radius: var(--radius-md);
+      background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.35rem;
+      color: #070913;
+      box-shadow: var(--shadow-glow);
+      animation: logoPulse 4s infinite alternate;
+    }
+
+    @keyframes logoPulse {
+      0% { box-shadow: 0 0 10px rgba(0, 245, 255, 0.3); }
+      100% { box-shadow: 0 0 26px rgba(168, 85, 247, 0.5); }
+    }
+
+    .brand-title {
+      font-family: var(--font-display);
+      font-size: 1.3rem;
+      font-weight: 800;
+      letter-spacing: -0.5px;
+      background: linear-gradient(90deg, #ffffff 40%, var(--accent-cyan) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      line-height: 1.1;
+    }
+
+    .brand-tagline {
+      font-size: 0.7rem;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+    }
+
+    .nav-pill-list {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      list-style: none;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    .nav-pill-list::-webkit-scrollbar { display: none; }
+
+    .nav-pill-btn {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.55rem 0.95rem;
+      font-size: 0.85rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      text-decoration: none;
+      border-radius: var(--radius-md);
+      transition: all 0.2s ease;
+      white-space: nowrap;
+      border: 1px solid transparent;
+    }
+
+    .nav-pill-btn:hover {
+      color: var(--text-main);
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .nav-pill-btn.active {
+      color: var(--accent-cyan);
+      background: rgba(0, 245, 255, 0.1);
+      border-color: rgba(0, 245, 255, 0.3);
+    }
+
+    .nav-right-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.55rem;
+      font-family: var(--font-sans);
+      font-size: 0.85rem;
+      font-weight: 600;
+      padding: 0.65rem 1.2rem;
+      border-radius: var(--radius-md);
+      border: 1px solid transparent;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      user-select: none;
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #00d2ff, #00f5ff);
+      color: #070913;
+      box-shadow: 0 0 16px rgba(0, 245, 255, 0.3);
+    }
+    .btn-primary:hover {
+      background: linear-gradient(135deg, #2ae7ff, #7bf9ff);
+      box-shadow: 0 0 25px rgba(0, 245, 255, 0.5);
+      transform: translateY(-1px);
+    }
+
+    .btn-purple {
+      background: linear-gradient(135deg, #8b5cf6, #a855f7);
+      color: #ffffff;
+      box-shadow: 0 0 16px rgba(168, 85, 247, 0.3);
+    }
+    .btn-purple:hover {
+      background: linear-gradient(135deg, #9d71f7, #c084fc);
+      box-shadow: 0 0 25px rgba(168, 85, 247, 0.5);
+      transform: translateY(-1px);
+    }
+
+    .btn-secondary {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid var(--border-subtle);
+      color: #e2e8f0;
+    }
+    .btn-secondary:hover {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.2);
+      color: #fff;
+    }
+
+    .btn-sm {
+      padding: 0.45rem 0.85rem;
+      font-size: 0.78rem;
+      border-radius: var(--radius-sm);
+    }
+
+    .btn-icon {
+      padding: 0.55rem;
+      border-radius: var(--radius-md);
+    }
+
+    /* Common Input Controls */
+    .input-box {
+      background: rgba(10, 14, 28, 0.85);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      color: #ffffff;
+      padding: 0.8rem 1rem;
+      font-family: var(--font-sans);
+      font-size: 0.95rem;
+      outline: none;
+      transition: all 0.2s ease;
+      width: 100%;
+    }
+
+    .input-box:focus {
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 0 3px rgba(0, 245, 255, 0.15);
+      background: rgba(14, 20, 42, 0.95);
+    }
+
+    textarea.input-box {
+      resize: vertical;
+      min-height: 85px;
+      line-height: 1.5;
+    }
+
+    .preset-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-top: 0.6rem;
+      align-items: center;
+    }
+
+    .preset-label {
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+      margin-right: 0.2rem;
+    }
+
+    .preset-btn {
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--text-muted);
+      font-size: 0.75rem;
+      padding: 0.25rem 0.65rem;
+      border-radius: 999px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      user-select: none;
+    }
+
+    .preset-btn:hover {
+      background: rgba(0, 245, 255, 0.1);
+      border-color: rgba(0, 245, 255, 0.3);
+      color: var(--accent-cyan);
+    }
+
+    /* Metrics Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+      margin: 1.25rem 0;
+    }
+
+    .stat-card {
+      background: rgba(13, 18, 38, 0.65);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 1rem 1.15rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.3rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 3px;
+      height: 100%;
+      background: var(--accent-cyan);
+      opacity: 0.8;
+    }
+    .stat-card.purple::before { background: var(--accent-purple); }
+    .stat-card.emerald::before { background: var(--accent-emerald); }
+    .stat-card.amber::before { background: var(--accent-amber); }
+    .stat-card.rose::before { background: var(--accent-rose); }
+
+    .stat-label {
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+
+    .stat-num {
+      font-family: var(--font-display);
+      font-size: 1.95rem;
+      font-weight: 800;
+      color: #ffffff;
+      line-height: 1.1;
+    }
+
+    .stat-sub {
+      font-size: 0.72rem;
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+    }
+
+    /* Explainer banner */
+    .edu-banner {
+      background: linear-gradient(90deg, rgba(59, 130, 246, 0.1), rgba(168, 85, 247, 0.1));
+      border: 1px solid rgba(168, 85, 247, 0.25);
+      border-radius: var(--radius-md);
+      padding: 1rem 1.25rem;
+      display: flex;
+      align-items: flex-start;
+      gap: 0.85rem;
+      margin: 1.25rem 0;
+    }
+    .edu-banner i {
+      font-size: 1.25rem;
+      color: var(--accent-cyan);
+      margin-top: 0.15rem;
+    }
+    .edu-banner-text {
+      font-size: 0.85rem;
+      color: #cbd5e1;
+      line-height: 1.55;
+    }
+
+    /* Main Container */
+    .main-wrapper {
+      max-width: 1550px;
+      margin: 0 auto;
+      padding: 0 2rem 4rem 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 4rem;
+    }
+
+    .content-section {
+      scroll-margin-top: 6rem;
+    }
+
+    .sec-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-end;
+      margin-bottom: 1.5rem;
+      gap: 1.5rem;
+      flex-wrap: wrap;
+    }
+
+    .sec-tag {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--accent-cyan);
+      margin-bottom: 0.35rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .sec-title {
+      font-family: var(--font-display);
+      font-size: 2rem;
+      font-weight: 800;
+      color: #ffffff;
+      letter-spacing: -0.5px;
+    }
+
+    .sec-desc {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      max-width: 720px;
+      margin-top: 0.35rem;
+    }
+
+    .sec-actions {
+      display: flex;
+      gap: 0.65rem;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+  </style>
+  <style>
+    /* ==========================================================================
+       SECTION 1 SPECIFIC STYLES: VOCABULARY BUILDER
+       ========================================================================== */
+    .sentence-inspector-box {
+      background: rgba(10, 14, 28, 0.75);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 1.25rem 1.5rem;
+      font-size: 1.15rem;
+      line-height: 2;
+      min-height: 80px;
+      margin: 1.25rem 0;
+    }
+
+    .word-token-span {
+      display: inline-block;
+      padding: 0.15rem 0.45rem;
+      margin: 0.15rem 0.2rem;
+      border-radius: var(--radius-sm);
+      cursor: pointer;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      border: 1px solid transparent;
+      user-select: none;
+    }
+
+    .word-token-span:hover {
+      background: rgba(0, 245, 255, 0.15);
+      color: var(--accent-cyan);
+    }
+
+    .word-token-span.highlighted {
+      background: rgba(0, 245, 255, 0.28);
+      border-color: var(--accent-cyan);
+      color: #ffffff;
+      font-weight: 700;
+      box-shadow: 0 0 16px rgba(0, 245, 255, 0.5);
+      transform: scale(1.04);
+    }
+
+    .vocab-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+      gap: 1rem;
+      max-height: 500px;
+      overflow-y: auto;
+      padding: 0.5rem 0.5rem 0.5rem 0;
+    }
+
+    .vocab-card {
+      background: rgba(13, 18, 38, 0.75);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 1.1rem;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      display: flex;
+      flex-direction: column;
+      gap: 0.65rem;
+      position: relative;
+    }
+
+    .vocab-card:hover {
+      background: var(--bg-card-hover);
+      transform: translateY(-2px);
+      border-color: rgba(0, 245, 255, 0.35);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+    }
+
+    .vocab-card.active {
+      border-color: var(--accent-cyan);
+      background: rgba(0, 245, 255, 0.1);
+      box-shadow: 0 0 22px rgba(0, 245, 255, 0.3);
+    }
+
+    .vocab-card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .token-id-badge {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      padding: 0.2rem 0.55rem;
+      border-radius: 999px;
+      background: rgba(59, 130, 246, 0.2);
+      border: 1px solid rgba(59, 130, 246, 0.4);
+      color: #93c5fd;
+      font-weight: 600;
+    }
+
+    .status-badge {
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 0.18rem 0.5rem;
+      border-radius: 999px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .status-badge.new {
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.35);
+    }
+    .status-badge.repeated {
+      background: rgba(245, 158, 11, 0.15);
+      color: #fbbf24;
+      border: 1px solid rgba(245, 158, 11, 0.35);
+    }
+
+    .vocab-card-word {
+      font-family: var(--font-display);
+      font-size: 1.35rem;
+      font-weight: 700;
+      color: #ffffff;
+      word-break: break-all;
+      line-height: 1.2;
+    }
+
+    .vocab-meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem 0.9rem;
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      border-top: 1px solid rgba(255, 255, 255, 0.05);
+      padding-top: 0.55rem;
+    }
+    .vocab-meta-row span strong {
+      font-family: var(--font-mono);
+      color: #e2e8f0;
+    }
+
+    .table-container {
+      overflow-x: auto;
+      max-height: 380px;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .dark-table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+      font-size: 0.85rem;
+    }
+
+    .dark-table th {
+      background: rgba(10, 14, 28, 0.95);
+      padding: 0.8rem 1rem;
+      color: var(--text-muted);
+      font-weight: 600;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      border-bottom: 1px solid var(--border-subtle);
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: 0.6px;
+    }
+
+    .dark-table td {
+      padding: 0.7rem 1rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+      color: #cbd5e1;
+    }
+
+    .dark-table tr:hover td {
+      background: rgba(255, 255, 255, 0.035);
+    }
+
+    /* ==========================================================================
+       SECTION 2 SPECIFIC STYLES: TOKEN CREATION
+       ========================================================================== */
+    .pipeline-stack {
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      margin: 1.5rem 0;
+    }
+
+    .pipe-step-card {
+      background: rgba(13, 18, 38, 0.6);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+      display: flex;
+      gap: 1.25rem;
+      align-items: flex-start;
+      position: relative;
+    }
+
+    .pipe-step-num {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(0, 245, 255, 0.1);
+      border: 1px solid var(--accent-cyan);
+      color: var(--accent-cyan);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+
+    .pipe-step-body {
+      flex: 1;
+    }
+
+    .pipe-step-title {
+      font-size: 1rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 0.25rem;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .pipe-step-desc {
+      font-size: 0.82rem;
+      color: var(--text-muted);
+      margin-bottom: 0.75rem;
+    }
+
+    .token-blocks-flow {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.65rem;
+      margin-top: 0.5rem;
+    }
+
+    .token-block-item {
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+      border-radius: var(--radius-md);
+      padding: 0.55rem 0.85rem;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      border: 1px solid var(--border-subtle);
+      background: rgba(20, 26, 52, 0.85);
+      user-select: none;
+    }
+
+    .token-block-item:hover {
+      transform: translateY(-3px) scale(1.04);
+      border-color: var(--accent-cyan);
+      box-shadow: 0 6px 20px rgba(0, 245, 255, 0.25);
+    }
+
+    .token-block-item.highlighted {
+      border-color: var(--accent-cyan);
+      background: rgba(0, 245, 255, 0.2);
+      box-shadow: 0 0 18px rgba(0, 245, 255, 0.45);
+      transform: translateY(-3px) scale(1.05);
+    }
+
+    .token-str {
+      font-family: var(--font-display);
+      font-weight: 700;
+      font-size: 1.05rem;
+      color: #ffffff;
+      line-height: 1.2;
+    }
+
+    .token-sub-id {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--accent-cyan);
+      margin-top: 0.25rem;
+    }
+
+    .token-seq-display {
+      background: rgba(6, 9, 18, 0.95);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 1.15rem 1.35rem;
+      font-family: var(--font-mono);
+      font-size: 0.95rem;
+      color: #38bdf8;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 1rem;
+      word-break: break-all;
+    }
+
+    .token-inspector-box {
+      background: rgba(13, 18, 38, 0.75);
+      border: 1px solid rgba(0, 245, 255, 0.25);
+      border-radius: var(--radius-md);
+      padding: 1.1rem 1.35rem;
+      margin-top: 1rem;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 1.25rem;
+    }
+
+    /* ==========================================================================
+       SECTION 3 SPECIFIC STYLES: SENTENCE SIMILARITY
+       ========================================================================== */
+    .sim-compare-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.5rem;
+      margin-bottom: 1.5rem;
+    }
+
+    @media (max-width: 900px) {
+      .sim-compare-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .sim-result-card {
+      display: grid;
+      grid-template-columns: 320px 1fr;
+      gap: 2rem;
+      padding: 2rem;
+      align-items: center;
+    }
+
+    @media (max-width: 900px) {
+      .sim-result-card {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .radial-gauge-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+
+    .radial-gauge-svg {
+      width: 220px;
+      height: 220px;
+      transform: rotate(-90deg);
+    }
+
+    .radial-gauge-track {
+      fill: none;
+      stroke: rgba(255, 255, 255, 0.08);
+      stroke-width: 14;
+    }
+
+    .radial-gauge-bar {
+      fill: none;
+      stroke: url(#simGradient);
+      stroke-width: 14;
+      stroke-linecap: round;
+      stroke-dasharray: 565;
+      stroke-dashoffset: 565;
+      transition: stroke-dashoffset 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .radial-gauge-text {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      text-align: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    .radial-gauge-num {
+      font-family: var(--font-display);
+      font-size: 2.85rem;
+      font-weight: 800;
+      color: #ffffff;
+      line-height: 1;
+    }
+
+    .radial-gauge-label {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-top: 0.25rem;
+    }
+
+    .sim-badge-tag {
+      display: inline-block;
+      margin-top: 0.65rem;
+      font-size: 0.72rem;
+      font-weight: 700;
+      padding: 0.2rem 0.65rem;
+      border-radius: 999px;
+      text-transform: uppercase;
+    }
+
+    /* Set Breakdown Cards */
+    .venn-breakdown-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1rem;
+      margin-top: 1.5rem;
+    }
+
+    @media (max-width: 900px) {
+      .venn-breakdown-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    .venn-column {
+      background: rgba(13, 18, 38, 0.6);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .venn-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding-bottom: 0.6rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    }
+
+    .venn-title {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+    }
+
+    .venn-count {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      padding: 0.15rem 0.5rem;
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.08);
+      color: #cbd5e1;
+    }
+
+    .venn-chips-wrap {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+      max-height: 180px;
+      overflow-y: auto;
+    }
+
+    .venn-chip {
+      font-size: 0.78rem;
+      padding: 0.25rem 0.6rem;
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(255, 255, 255, 0.04);
+      color: #e2e8f0;
+    }
+
+    .venn-chip.shared {
+      background: rgba(16, 185, 129, 0.15);
+      border-color: rgba(16, 185, 129, 0.35);
+      color: #6ee7b7;
+      font-weight: 600;
+    }
+
+    /* Closest Pair Analysis */
+    .pair-row {
+      display: grid;
+      grid-template-columns: 140px 30px 140px 1fr 70px;
+      align-items: center;
+      gap: 1rem;
+      padding: 0.7rem 0.5rem;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    }
+    .pair-row:last-child { border-bottom: none; }
+
+    @media (max-width: 768px) {
+      .pair-row {
+        grid-template-columns: 1fr auto 1fr;
+        gap: 0.5rem;
+      }
+      .pair-bar-outer { grid-column: span 3; }
+      .pair-score-tag { grid-column: span 3; text-align: right; }
+    }
+
+    .pair-word-badge {
+      font-family: var(--font-display);
+      font-weight: 600;
+      font-size: 0.9rem;
+      padding: 0.35rem 0.65rem;
+      border-radius: var(--radius-sm);
+      background: rgba(255, 255, 255, 0.06);
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .pair-bar-outer {
+      background: rgba(255, 255, 255, 0.08);
+      height: 8px;
+      border-radius: 999px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .pair-bar-inner {
+      height: 100%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--accent-blue), var(--accent-cyan));
+      transition: width 0.8s ease;
+    }
+
+    .pair-score-tag {
+      font-family: var(--font-mono);
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--accent-cyan);
+    }
+
+    /* ==========================================================================
+       SECTION 4 SPECIFIC STYLES: 3D EMBEDDING SPACE (THREE.JS)
+       ========================================================================== */
+    .three-box-wrapper {
+      position: relative;
+      width: 100%;
+      height: 650px;
+      background: radial-gradient(circle at center, #0e142e 0%, #060913 100%);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+      border: 1px solid var(--border-subtle);
+    }
+
+    #three-canvas {
+      width: 100%;
+      height: 100%;
+      cursor: grab;
+      display: block;
+    }
+    #three-canvas:active {
+      cursor: grabbing;
+    }
+
+    .three-top-controls {
+      position: absolute;
+      top: 1rem;
+      left: 1rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      z-index: 10;
+      background: rgba(8, 12, 26, 0.78);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      padding: 0.5rem 0.75rem;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .three-bottom-hud {
+      position: absolute;
+      bottom: 1rem;
+      left: 1rem;
+      background: rgba(8, 12, 26, 0.78);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      padding: 0.65rem 1rem;
+      border-radius: var(--radius-md);
+      border: 1px solid var(--border-subtle);
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      gap: 1.25rem;
+    }
+
+    .three-node-tooltip {
+      position: absolute;
+      display: none;
+      pointer-events: none;
+      background: rgba(10, 14, 30, 0.95);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid var(--accent-cyan);
+      box-shadow: 0 0 20px rgba(0, 245, 255, 0.35);
+      border-radius: var(--radius-md);
+      padding: 0.75rem 1rem;
+      z-index: 100;
+      min-width: 190px;
+      transform: translate(-50%, -120%);
+    }
+
+    .tooltip-word-title {
+      font-family: var(--font-display);
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    .tooltip-cluster-tag {
+      font-size: 0.7rem;
+      font-weight: 600;
+      color: var(--accent-cyan);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .tooltip-coords-tag {
+      font-family: var(--font-mono);
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      margin-top: 0.35rem;
+    }
+
+    /* 3D Side Inspector */
+    .three-docked-inspector {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      width: 320px;
+      max-height: calc(100% - 2rem);
+      overflow-y: auto;
+      background: rgba(10, 14, 30, 0.92);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--border-glow-cyan);
+      border-radius: var(--radius-md);
+      padding: 1.25rem;
+      z-index: 20;
+      display: flex;
+      flex-direction: column;
+      gap: 1rem;
+      box-shadow: var(--shadow-glass);
+      transition: transform 0.3s ease;
+    }
+
+    .inspector-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 0.75rem;
+    }
+
+    .vector-bars-mini {
+      display: flex;
+      align-items: flex-end;
+      gap: 3px;
+      height: 55px;
+      background: rgba(0, 0, 0, 0.35);
+      padding: 6px;
+      border-radius: var(--radius-sm);
+    }
+    .vector-bar-stick {
+      flex: 1;
+      background: var(--accent-cyan);
+      border-radius: 2px;
+      min-height: 2px;
+      opacity: 0.85;
+      transition: height 0.3s ease;
+    }
+
+    /* ==========================================================================
+       SECTION 5 SPECIFIC STYLES: PLAYGROUND & PLOTLY
+       ========================================================================== */
+    .tab-pills-row {
+      display: flex;
+      gap: 0.5rem;
+      margin-bottom: 1.25rem;
+      border-bottom: 1px solid var(--border-subtle);
+      padding-bottom: 0.5rem;
+      overflow-x: auto;
+    }
+
+    .tab-pill-btn {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-family: var(--font-sans);
+      font-size: 0.9rem;
+      font-weight: 600;
+      padding: 0.55rem 1.15rem;
+      border-radius: var(--radius-md);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      transition: all 0.2s ease;
+      white-space: nowrap;
+    }
+
+    .tab-pill-btn:hover {
+      color: #fff;
+      background: rgba(255, 255, 255, 0.05);
+    }
+
+    .tab-pill-btn.active {
+      color: var(--accent-cyan);
+      background: rgba(0, 245, 255, 0.1);
+      border: 1px solid rgba(0, 245, 255, 0.3);
+    }
+
+    .chart-panel-view {
+      display: none;
+      animation: tabFadeIn 0.3s ease;
+    }
+    .chart-panel-view.active {
+      display: block;
+    }
+
+    @keyframes tabFadeIn {
+      from { opacity: 0; transform: translateY(5px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .plotly-render-box {
+      width: 100%;
+      height: 540px;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      background: rgba(8, 12, 26, 0.65);
+      border: 1px solid var(--border-subtle);
+    }
+
+    /* ==========================================================================
+       KNOWLEDGE BASE MODAL & TOAST
+       ========================================================================== */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.75);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      z-index: 2000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1.5rem;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+    }
+
+    .modal-overlay.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-window {
+      background: #0d1226;
+      border: 1px solid var(--border-glow-purple);
+      border-radius: var(--radius-xl);
+      max-width: 920px;
+      width: 100%;
+      max-height: 85vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7);
+      transform: scale(0.95);
+      transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      overflow: hidden;
+    }
+
+    .modal-overlay.open .modal-window {
+      transform: scale(1);
+    }
+
+    .modal-header-bar {
+      padding: 1.5rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid var(--border-subtle);
+      background: rgba(14, 18, 38, 0.85);
+    }
+
+    .modal-scroll-area {
+      padding: 2rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 1.75rem;
+    }
+
+    .theory-article-card {
+      background: rgba(18, 24, 48, 0.6);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-md);
+      padding: 1.25rem 1.5rem;
+    }
+
+    .theory-article-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--accent-cyan);
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 0.55rem;
+    }
+
+    .math-formula-box {
+      background: rgba(7, 10, 20, 0.9);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius-sm);
+      padding: 0.75rem 1rem;
+      font-family: var(--font-mono);
+      font-size: 0.88rem;
+      color: #38bdf8;
+      margin: 0.75rem 0;
+      overflow-x: auto;
+    }
+
+    /* Toast */
+    .toast-tray {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+      z-index: 3000;
+      pointer-events: none;
+    }
+
+    .toast-pill {
+      background: rgba(14, 18, 38, 0.95);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--accent-cyan);
+      box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+      border-radius: var(--radius-md);
+      padding: 0.75rem 1.25rem;
+      color: #fff;
+      font-size: 0.85rem;
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+      animation: slideToast 0.3s cubic-bezier(0.16, 1, 0.3, 1), fadeToast 0.3s ease 2.7s forwards;
+    }
+
+    @keyframes slideToast {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    @keyframes fadeToast {
+      to { opacity: 0; transform: translateY(-6px); }
+    }
+  </style>
+</head>
+<body>
+  <!-- SVG Gradients for Progress Ring -->
+  <svg width="0" height="0" style="position: absolute;">
+    <defs>
+      <linearGradient id="simGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stop-color="#00f5ff" />
+        <stop offset="50%" stop-color="#3b82f6" />
+        <stop offset="100%" stop-color="#a855f7" />
+      </linearGradient>
+    </defs>
+  </svg>
+
+  <!-- ==========================================================================
+       TOP NAVIGATION BAR
+       ========================================================================== -->
+  <header class="top-navbar">
+    <div class="nav-inner">
+      <a href="#" class="brand-group">
+        <div class="brand-logo-badge">
+          <i class="fa-solid fa-brain"></i>
+        </div>
+        <div>
+          <div class="brand-title">NEUROLEX 3D</div>
+          <div class="brand-tagline">NLP & Vector Embedding Laboratory</div>
+        </div>
+      </a>
+
+      <ul class="nav-pill-list">
+        <li><a href="#sec-vocab" class="nav-pill-btn active"><i class="fa-solid fa-book-open"></i> 1. Vocabulary</a></li>
+        <li><a href="#sec-tokens" class="nav-pill-btn"><i class="fa-solid fa-shapes"></i> 2. Token Creation</a></li>
+        <li><a href="#sec-similarity" class="nav-pill-btn"><i class="fa-solid fa-scale-balanced"></i> 3. Sentence Similarity</a></li>
+        <li><a href="#sec-3d-space" class="nav-pill-btn"><i class="fa-solid fa-cube"></i> 4. 3D Space</a></li>
+        <li><a href="#sec-playground" class="nav-pill-btn"><i class="fa-solid fa-flask"></i> 5. Tokenizer Lab</a></li>
+      </ul>
+
+      <div class="nav-right-actions">
+        <button class="btn btn-purple btn-sm" onclick="openTheoryModal()">
+          <i class="fa-solid fa-graduation-cap"></i> NLP Theory & Formulas
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ==========================================================================
+       HERO BANNER
+       ========================================================================== */ -->
+  <div style="max-width: 1550px; margin: 2rem auto 1.5rem auto; padding: 0 2rem;">
+    <div class="glass-card" style="padding: 2.25rem 2.5rem; position: relative; overflow: hidden; background: linear-gradient(135deg, rgba(14, 18, 38, 0.85), rgba(24, 18, 48, 0.85));">
+      <div style="position: relative; z-index: 2;">
+        <div style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.35rem 0.85rem; background: rgba(0, 245, 255, 0.1); border: 1px solid rgba(0, 245, 255, 0.3); border-radius: 999px; font-size: 0.75rem; font-weight: 700; color: var(--accent-cyan); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.85rem;">
+          <i class="fa-solid fa-bolt"></i> Interactive NLP & Dimensionality Engine
+        </div>
+        <h1 style="font-family: var(--font-display); font-size: 2.6rem; font-weight: 800; line-height: 1.15; letter-spacing: -1px; margin-bottom: 0.75rem; background: linear-gradient(110deg, #ffffff 40%, var(--accent-cyan) 75%, var(--accent-purple) 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+          Deconstruct Sentences, Tokens & 3D Embeddings
+        </h1>
+        <p style="color: var(--text-muted); font-size: 1.05rem; max-width: 820px; line-height: 1.6;">
+          An interactive laboratory demonstrating how raw text transforms into discrete tokens, numerical indices, and high-dimensional vector embeddings projected into 3D space with genuine Principal Component Analysis (PCA).
+        </p>
+        <div style="display: flex; flex-wrap: wrap; gap: 0.65rem; margin-top: 1.25rem;">
+          <span class="preset-btn" style="cursor: default;"><i class="fa-solid fa-cube" style="color: var(--accent-cyan);"></i> Three.js WebGL Orbit Space</span>
+          <span class="preset-btn" style="cursor: default;"><i class="fa-solid fa-chart-line" style="color: var(--accent-purple);"></i> Plotly 2D & 3D Projections</span>
+          <span class="preset-btn" style="cursor: default;"><i class="fa-solid fa-calculator" style="color: var(--accent-emerald);"></i> Real Jacobi PCA Decomposition</span>
+          <span class="preset-btn" style="cursor: default;"><i class="fa-solid fa-layer-group" style="color: var(--accent-amber);"></i> Word, Char & Subword Tokenizers</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ==========================================================================
+       MAIN CONTENT CONTAINER
+       ========================================================================== -->
+  <main class="main-wrapper">
+
+    <!-- ======================================================================
+         SECTION 1: VOCABULARY BUILDER
+         ====================================================================== -->
+    <section id="sec-vocab" class="content-section">
+      <div class="sec-header">
+        <div>
+          <div class="sec-tag"><i class="fa-solid fa-book-open"></i> Feature 01</div>
+          <h2 class="sec-title">Interactive Vocabulary Builder</h2>
+          <p class="sec-desc">
+            Extract unique vocabulary entries from any sentence. Inspect word frequencies, token IDs, sentence positions, and lexical diversity.
+          </p>
+        </div>
+        <div class="sec-actions">
+          <button class="btn btn-secondary btn-sm" onclick="loadVocabSample()">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> Sample Sentence
+          </button>
+          <button class="btn btn-secondary btn-sm" onclick="copyVocabJSON()">
+            <i class="fa-solid fa-code"></i> Copy Vocab JSON
+          </button>
+          <button class="btn btn-secondary btn-sm" onclick="copyVocabList()">
+            <i class="fa-solid fa-copy"></i> Copy Words List
+          </button>
+          <button class="btn btn-secondary btn-sm" onclick="resetVocabSection()">
+            <i class="fa-solid fa-rotate-left"></i> Reset
+          </button>
+        </div>
+      </div>
+
+      <div class="glass-card" style="padding: 1.75rem;">
+        <label class="preset-label" style="font-size: 0.82rem; font-weight: 600; color: #fff; margin-bottom: 0.4rem; display: block;">
+          Input Sentence to Analyze:
+        </label>
+        <textarea id="vocab-input-text" class="input-box" rows="2" placeholder="Type or paste any sentence here...">Natural language processing enables computers to comprehend human language and generate meaningful text.</textarea>
+        
+        <div class="preset-row">
+          <span class="preset-label">Presets:</span>
+          <button class="preset-btn" onclick="setVocabInput('Natural language processing enables computers to comprehend human language and generate meaningful text.')">NLP Overview</button>
+          <button class="preset-btn" onclick="setVocabInput('The quick brown fox jumps over the lazy dog while another brown fox watches.')">Pangram & Duplicates</button>
+          <button class="preset-btn" onclick="setVocabInput('To be or not to be that is the question whether tis nobler in the mind.')">Shakespeare Hamlet</button>
+          <button class="preset-btn" onclick="setVocabInput('Transformers and attention mechanisms revolutionize artificial intelligence, deep learning, and neural network architectures.')">Modern AI</button>
+        </div>
+
+        <div style="margin-top: 1.25rem; display: flex; gap: 0.85rem; align-items: center;">
+          <button class="btn btn-primary" onclick="buildVocabulary()">
+            <i class="fa-solid fa-bolt"></i> Build Vocabulary
+          </button>
+          <button class="btn btn-secondary" onclick="document.getElementById('vocab-input-text').value=''; document.getElementById('vocab-input-text').focus();">
+            <i class="fa-solid fa-eraser"></i> Clear
+          </button>
+        </div>
+
+        <!-- Interactive Sentence Highlight Container -->
+        <div style="margin-top: 1.5rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center;">
+            <label class="preset-label" style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">
+              <i class="fa-solid fa-hand-pointer" style="color: var(--accent-cyan);"></i> Interactive Sentence View (Click any word to inspect):
+            </label>
+            <span id="vocab-active-highlight-label" style="font-size: 0.75rem; color: var(--accent-cyan); font-family: var(--font-mono);"></span>
+          </div>
+          <div id="vocab-sentence-display" class="sentence-inspector-box"></div>
+        </div>
+
+        <!-- Metrics Cards -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <span class="stat-label">Vocabulary Size |V|</span>
+            <span id="vocab-stat-size" class="stat-num">0</span>
+            <span class="stat-sub">Unique word types</span>
+          </div>
+          <div class="stat-card purple">
+            <span class="stat-label">Total Words N</span>
+            <span id="vocab-stat-total" class="stat-num">0</span>
+            <span class="stat-sub">Total word tokens</span>
+          </div>
+          <div class="stat-card emerald">
+            <span class="stat-label">Unique Entries</span>
+            <span id="vocab-stat-unique" class="stat-num">0</span>
+            <span class="stat-sub">Single occurrence (freq=1)</span>
+          </div>
+          <div class="stat-card amber">
+            <span class="stat-label">Repeated Words</span>
+            <span id="vocab-stat-repeated" class="stat-num">0</span>
+            <span class="stat-sub">Multiple occurrences (freq>1)</span>
+          </div>
+          <div class="stat-card rose">
+            <span class="stat-label">Type-Token Ratio</span>
+            <span id="vocab-stat-ttr" class="stat-num">0%</span>
+            <span class="stat-sub">Lexical diversity (|V| / N)</span>
+          </div>
+        </div>
+
+        <!-- Explainer banner -->
+        <div class="edu-banner">
+          <i class="fa-solid fa-circle-info"></i>
+          <div class="edu-banner-text">
+            <strong>Tokens vs. Types (Vocabulary Entries):</strong> In NLP, a <em>token</em> is an individual instance of a word occurring in a text sequence ($N = \text{total tokens}$), whereas a <em>type</em> is a unique vocabulary member ($|V| = \text{vocabulary size}$). For example, in <em>"to be or not to be"</em>, there are 6 tokens, but only 4 unique vocabulary entries.
+          </div>
+        </div>
+
+        <!-- Filter and Sort Controls -->
+        <div style="display: flex; justify-content: space-between; align-items: center; margin: 1.5rem 0 1rem 0; flex-wrap: wrap; gap: 1rem;">
+          <h3 style="font-family: var(--font-display); font-size: 1.15rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 0.5rem;">
+            <i class="fa-solid fa-id-card" style="color: var(--accent-cyan);"></i> Extracted Vocabulary Cards
+          </h3>
+          <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+            <input type="text" id="vocab-search-filter" class="input-box" style="width: 200px; padding: 0.45rem 0.75rem; font-size: 0.82rem;" placeholder="Search words..." oninput="filterVocabCards()">
+            <select id="vocab-sort-select" class="input-box" style="width: 170px; padding: 0.45rem 0.75rem; font-size: 0.82rem;" onchange="sortAndRenderVocab()">
+              <option value="first_pos">First Occurrence</option>
+              <option value="freq_desc">Highest Frequency</option>
+              <option value="alpha_asc">Alphabetical (A-Z)</option>
+              <option value="len_desc">Longest Word</option>
+            </select>
+          </div>
+        </div>
+
+        <!-- Vocabulary Cards Grid -->
+        <div id="vocab-cards-grid" class="vocab-cards-grid"></div>
+
+        <!-- Tabbed views: Table & Growth Chart -->
+        <div style="margin-top: 2rem;">
+          <div class="tab-pills-row">
+            <button class="tab-pill-btn active" onclick="switchVocabTab('table')">
+              <i class="fa-solid fa-table"></i> Vocabulary Lookup Table
+            </button>
+            <button class="tab-pill-btn" onclick="switchVocabTab('growth')">
+              <i class="fa-solid fa-chart-line"></i> Vocabulary Growth (Heaps' Law)
+            </button>
+          </div>
+
+          <div id="vocab-tab-table" class="chart-panel-view active">
+            <div class="table-container">
+              <table class="dark-table">
+                <thead>
+                  <tr>
+                    <th>Token ID</th>
+                    <th>Word Entry</th>
+                    <th>Frequency</th>
+                    <th>Length</th>
+                    <th>Sentence Positions</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="vocab-table-body"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div id="vocab-tab-growth" class="chart-panel-view">
+            <div id="vocab-growth-chart" style="width: 100%; height: 380px; border-radius: var(--radius-md); overflow: hidden; background: rgba(8, 12, 26, 0.65); border: 1px solid var(--border-subtle);"></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         SECTION 2: TOKEN CREATION AND VISUALIZATION
+         ====================================================================== -->
+    <section id="sec-tokens" class="content-section">
+      <div class="sec-header">
+        <div>
+          <div class="sec-tag"><i class="fa-solid fa-shapes"></i> Feature 02</div>
+          <h2 class="sec-title">Token Creation & Pipeline Visualization</h2>
+          <p class="sec-desc">
+            Observe the 5-step tokenization process that converts raw human language into normalized segments, discrete token blocks, and numerical tensor ID sequences.
+          </p>
+        </div>
+        <div class="sec-actions">
+          <button class="btn btn-secondary btn-sm" onclick="loadTokenSample()">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> Sample Sentence
+          </button>
+          <button class="btn btn-secondary btn-sm" onclick="copyTokenIDs()">
+            <i class="fa-solid fa-copy"></i> Copy Token IDs
+          </button>
+          <button class="btn btn-secondary btn-sm" onclick="resetTokenSection()">
+            <i class="fa-solid fa-rotate-left"></i> Reset
+          </button>
+        </div>
+      </div>
+
+      <div class="glass-card" style="padding: 1.75rem;">
+        <label class="preset-label" style="font-size: 0.82rem; font-weight: 600; color: #fff; margin-bottom: 0.4rem; display: block;">
+          Sentence to Tokenize:
+        </label>
+        <textarea id="token-input-text" class="input-box" rows="2" placeholder="Type a sentence to tokenize...">Artificial intelligence models convert text into high-dimensional numerical vectors.</textarea>
+
+        <div class="preset-row">
+          <span class="preset-label">Presets:</span>
+          <button class="preset-btn" onclick="setTokenInput('Artificial intelligence models convert text into high-dimensional numerical vectors.')">AI & Vectors</button>
+          <button class="preset-btn" onclick="setTokenInput('Tokens are the discrete atomic units of modern natural language processing.')">Token Definition</button>
+          <button class="preset-btn" onclick="setTokenInput('Attention is all you need for sequence-to-sequence neural transduction!')">Attention Paper</button>
+        </div>
+
+        <div style="display: flex; flex-wrap: wrap; gap: 1.25rem; align-items: center; margin-top: 1rem; padding: 0.75rem 1rem; background: rgba(10, 14, 28, 0.6); border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+          <span style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">Pipeline Options:</span>
+          <label style="font-size: 0.8rem; color: #cbd5e1; display: flex; align-items: center; gap: 0.4rem; cursor: pointer;">
+            <input type="checkbox" id="token-opt-lowercase" checked onchange="generateTokensPipeline()"> Lowercase Folding
+          </label>
+          <label style="font-size: 0.8rem; color: #cbd5e1; display: flex; align-items: center; gap: 0.4rem; cursor: pointer;">
+            <input type="checkbox" id="token-opt-punct" checked onchange="generateTokensPipeline()"> Separate Punctuation Tokens
+          </label>
+          <label style="font-size: 0.8rem; color: #cbd5e1; display: flex; align-items: center; gap: 0.4rem; cursor: pointer;">
+            <input type="checkbox" id="token-opt-special" onchange="generateTokensPipeline()"> Add [BOS] & [EOS] Boundary Tokens
+          </label>
+        </div>
+
+        <div style="margin-top: 1.25rem; display: flex; gap: 0.85rem; align-items: center;">
+          <button class="btn btn-primary" onclick="generateTokensPipeline()">
+            <i class="fa-solid fa-shapes"></i> Generate Tokens
+          </button>
+          <button class="btn btn-secondary" onclick="document.getElementById('token-input-text').value=''; document.getElementById('token-input-text').focus();">
+            <i class="fa-solid fa-eraser"></i> Clear
+          </button>
+        </div>
+
+        <!-- 5-Step Pipeline Flow -->
+        <div class="pipeline-stack">
+          <!-- Step 1 -->
+          <div class="pipe-step-card">
+            <div class="pipe-step-num">1</div>
+            <div class="pipe-step-body">
+              <div class="pipe-step-title"><i class="fa-solid fa-align-left" style="color: var(--accent-cyan);"></i> Raw Input String</div>
+              <div class="pipe-step-desc">The unmodified raw text stream received by the tokenizer.</div>
+              <div id="pipe-step1-raw" class="sentence-inspector-box" style="margin: 0; padding: 0.85rem 1.15rem; min-height: auto;"></div>
+            </div>
+          </div>
+
+          <!-- Step 2 -->
+          <div class="pipe-step-card">
+            <div class="pipe-step-num">2</div>
+            <div class="pipe-step-body">
+              <div class="pipe-step-title"><i class="fa-solid fa-filter" style="color: var(--accent-purple);"></i> Normalization & Cleaning</div>
+              <div class="pipe-step-desc">Applies Unicode normalization (NFKC), whitespace consolidation, and casing transformations.</div>
+              <div id="pipe-step2-norm" class="sentence-inspector-box" style="margin: 0; padding: 0.85rem 1.15rem; min-height: auto; font-family: var(--font-mono); font-size: 0.95rem; color: #cbd5e1;"></div>
+            </div>
+          </div>
+
+          <!-- Step 3 -->
+          <div class="pipe-step-card">
+            <div class="pipe-step-num">3</div>
+            <div class="pipe-step-body">
+              <div class="pipe-step-title"><i class="fa-solid fa-scissors" style="color: var(--accent-emerald);"></i> Segmentation / Splitting into Tokens</div>
+              <div class="pipe-step-desc">Breaks text along delimiter boundaries and punctuation marks into atomic token units. Click any token to inspect details:</div>
+              <div id="pipe-step3-blocks" class="token-blocks-flow"></div>
+            </div>
+          </div>
+
+          <!-- Step 4 -->
+          <div class="pipe-step-card">
+            <div class="pipe-step-num">4</div>
+            <div class="pipe-step-body">
+              <div class="pipe-step-title"><i class="fa-solid fa-id-badge" style="color: var(--accent-amber);"></i> Vocabulary Lookup & Token ID Assignment</div>
+              <div class="pipe-step-desc">Maps each string token to its corresponding integer index in the vocabulary dictionary matrix:</div>
+              <div id="pipe-step4-lookup" style="display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem;"></div>
+            </div>
+          </div>
+
+          <!-- Step 5 -->
+          <div class="pipe-step-card">
+            <div class="pipe-step-num">5</div>
+            <div class="pipe-step-body">
+              <div class="pipe-step-title"><i class="fa-solid fa-layer-group" style="color: var(--accent-rose);"></i> Final Token ID Sequence (Model Input Tensor)</div>
+              <div class="pipe-step-desc">The discrete 1D integer vector passed into the embedding lookup layer of a Transformer:</div>
+              <div class="token-seq-display">
+                <span id="pipe-step5-sequence">[ ... ]</span>
+                <button class="btn btn-secondary btn-sm" onclick="copyTokenIDs()">
+                  <i class="fa-solid fa-copy"></i> Copy
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Token Inspector Box -->
+        <div id="token-live-inspector" class="token-inspector-box">
+          <div style="display: flex; align-items: center; gap: 1rem;">
+            <div style="width: 48px; height: 48px; border-radius: var(--radius-md); background: rgba(0, 245, 255, 0.15); border: 1px solid var(--accent-cyan); display: flex; align-items: center; justify-content: center; font-size: 1.5rem; color: var(--accent-cyan);">
+              <i class="fa-solid fa-cube"></i>
+            </div>
+            <div>
+              <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">Selected Token</div>
+              <div id="inspect-token-str" style="font-family: var(--font-display); font-size: 1.4rem; font-weight: 800; color: #fff;">None selected</div>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 1.5rem; flex-wrap: wrap;">
+            <div>
+              <div style="font-size: 0.72rem; color: var(--text-dim);">TOKEN ID</div>
+              <div id="inspect-token-id" style="font-family: var(--font-mono); font-size: 1.1rem; color: var(--accent-cyan); font-weight: 700;">-</div>
+            </div>
+            <div>
+              <div style="font-size: 0.72rem; color: var(--text-dim);">POSITION</div>
+              <div id="inspect-token-pos" style="font-family: var(--font-mono); font-size: 1.1rem; color: #cbd5e1; font-weight: 700;">-</div>
+            </div>
+            <div>
+              <div style="font-size: 0.72rem; color: var(--text-dim);">CHAR SPAN</div>
+              <div id="inspect-token-span" style="font-family: var(--font-mono); font-size: 1.1rem; color: #cbd5e1; font-weight: 700;">-</div>
+            </div>
+            <div>
+              <div style="font-size: 0.72rem; color: var(--text-dim);">LENGTH</div>
+              <div id="inspect-token-len" style="font-family: var(--font-mono); font-size: 1.1rem; color: #cbd5e1; font-weight: 700;">-</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Educational Note -->
+        <div class="edu-banner">
+          <i class="fa-solid fa-graduation-cap"></i>
+          <div class="edu-banner-text">
+            <strong>Educational Tokenizer Notice:</strong> This interactive visualizer uses a deterministic word/subword rule tokenizer designed for transparent inspection. Production large language models (such as GPT-4, LLaMA, or Claude) utilize Subword Byte-Pair Encoding (BPE) or WordPiece trained on gigabytes of text with vocabularies of 32,000 to 100,000+ token IDs. You can experiment with Subword and Character tokenization in Section 5 below!
+          </div>
+        </div>
+
+      </div>
+    </section>
+    <!-- ======================================================================
+         SECTION 3: SENTENCE SIMILARITY COMPARISON
+         ====================================================================== -->
+    <section id="sec-similarity" class="content-section">
+      <div class="sec-header">
+        <div>
+          <div class="sec-tag"><i class="fa-solid fa-scale-balanced"></i> Feature 03</div>
+          <h2 class="sec-title">Sentence Similarity Comparison</h2>
+          <p class="sec-desc">
+            Compare two sentences using both lexical metrics (Jaccard similarity) and continuous vector space metrics (Cosine similarity), plus closest-pair semantic word analysis.
+          </p>
+        </div>
+        <div class="sec-actions">
+          <button class="btn btn-secondary btn-sm" onclick="loadSimPair('paraphrase')">
+            <i class="fa-solid fa-clone"></i> Paraphrase Preset
+          </button>
+          <button class="btn btn-secondary btn-sm" onclick="loadSimPair('overlap')">
+            <i class="fa-solid fa-arrow-down-up-across-line"></i> High Overlap Preset
+          </button>
+          <button class="btn btn-secondary btn-sm" onclick="loadSimPair('different')">
+            <i class="fa-solid fa-shuffle"></i> Dissimilar Preset
+          </button>
+          <button class="btn btn-secondary btn-sm" onclick="swapSentences()">
+            <i class="fa-solid fa-right-left"></i> Swap A & B
+          </button>
+          <button class="btn btn-secondary btn-sm" onclick="resetSimSection()">
+            <i class="fa-solid fa-rotate-left"></i> Reset
+          </button>
+        </div>
+      </div>
+
+      <div class="glass-card" style="padding: 1.75rem;">
+        <!-- Two Input Fields -->
+        <div class="sim-compare-grid">
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+              <label class="preset-label" style="font-size: 0.82rem; font-weight: 600; color: #fff;">
+                <i class="fa-solid fa-font" style="color: var(--accent-blue);"></i> Sentence A:
+              </label>
+              <span id="sim-len-a" style="font-size: 0.72rem; color: var(--text-dim); font-family: var(--font-mono);">0 words</span>
+            </div>
+            <textarea id="sim-input-a" class="input-box" rows="2" placeholder="Enter first sentence...">Artificial intelligence and neural networks learn complex patterns from data.</textarea>
+          </div>
+
+          <div>
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.4rem;">
+              <label class="preset-label" style="font-size: 0.82rem; font-weight: 600; color: #fff;">
+                <i class="fa-solid fa-font" style="color: var(--accent-purple);"></i> Sentence B:
+              </label>
+              <span id="sim-len-b" style="font-size: 0.72rem; color: var(--text-dim); font-family: var(--font-mono);">0 words</span>
+            </div>
+            <textarea id="sim-input-b" class="input-box" rows="2" placeholder="Enter second sentence...">Deep learning models discover hidden structures from training datasets.</textarea>
+          </div>
+        </div>
+
+        <div style="display: flex; gap: 0.85rem; align-items: center; margin-bottom: 1.5rem;">
+          <button class="btn btn-primary" onclick="compareSentences()">
+            <i class="fa-solid fa-scale-balanced"></i> Compare Sentences
+          </button>
+          <button class="btn btn-secondary" onclick="copySimReport()">
+            <i class="fa-solid fa-file-lines"></i> Copy Report
+          </button>
+        </div>
+
+        <!-- Similarity Gauge & High-level Metrics -->
+        <div class="glass-card sim-result-card" style="background: rgba(11, 15, 32, 0.7);">
+          <!-- Radial Progress Gauge -->
+          <div class="radial-gauge-container">
+            <svg class="radial-gauge-svg" viewBox="0 0 200 200">
+              <circle class="radial-gauge-track" cx="100" cy="100" r="85"></circle>
+              <circle id="radial-gauge-bar" class="radial-gauge-bar" cx="100" cy="100" r="85"></circle>
+            </svg>
+            <div class="radial-gauge-text">
+              <span id="gauge-cosine-val" class="radial-gauge-num">0%</span>
+              <span class="radial-gauge-label">Cosine Similarity</span>
+              <span id="gauge-status-badge" class="sim-badge-tag status-badge new" style="background: rgba(0, 245, 255, 0.15); color: var(--accent-cyan); border: 1px solid rgba(0, 245, 255, 0.3);">
+                High Match
+              </span>
+            </div>
+          </div>
+
+          <!-- Secondary Metric Breakdown -->
+          <div>
+            <h3 style="font-family: var(--font-display); font-size: 1.25rem; font-weight: 700; color: #fff; margin-bottom: 0.85rem;">
+              Similarity Breakdown & Vector Metrics
+            </h3>
+            <div class="stats-grid" style="margin: 0; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));">
+              <div class="stat-card">
+                <span class="stat-label">Jaccard Sim</span>
+                <span id="sim-stat-jaccard" class="stat-num" style="font-size: 1.6rem;">0%</span>
+                <span class="stat-sub">|A ∩ B| / |A ∪ B|</span>
+              </div>
+              <div class="stat-card purple">
+                <span class="stat-label">Shared Words</span>
+                <span id="sim-stat-shared" class="stat-num" style="font-size: 1.6rem;">0</span>
+                <span class="stat-sub">Exact lexical intersection</span>
+              </div>
+              <div class="stat-card emerald">
+                <span class="stat-label">Unique in A</span>
+                <span id="sim-stat-unique-a" class="stat-num" style="font-size: 1.6rem;">0</span>
+                <span class="stat-sub">Tokens only in A</span>
+              </div>
+              <div class="stat-card amber">
+                <span class="stat-label">Unique in B</span>
+                <span id="sim-stat-unique-b" class="stat-num" style="font-size: 1.6rem;">0</span>
+                <span class="stat-sub">Tokens only in B</span>
+              </div>
+            </div>
+
+            <div style="margin-top: 1rem; font-size: 0.8rem; color: var(--text-muted); line-height: 1.5;">
+              <span style="color: var(--accent-cyan); font-weight: 600;">Lexical vs. Semantic:</span> 
+              Jaccard measures exact word overlap ($A \cap B$), whereas Cosine similarity computes the cosine angle between dense embedding vectors $\cos(\theta) = \frac{\mathbf{u} \cdot \mathbf{v}}{\|\mathbf{u}\|\|\mathbf{v}\|}$, capturing synonymous meaning even with zero common words!
+            </div>
+          </div>
+        </div>
+
+        <!-- 3-Column Vocabulary Breakdown -->
+        <div class="venn-breakdown-grid">
+          <div class="venn-column">
+            <div class="venn-header">
+              <span class="venn-title"><i class="fa-solid fa-circle" style="color: var(--accent-blue); font-size: 0.7rem;"></i> Only in Sentence A</span>
+              <span id="venn-count-a" class="venn-count">0</span>
+            </div>
+            <div id="venn-chips-a" class="venn-chips-wrap"></div>
+          </div>
+
+          <div class="venn-column" style="border-color: rgba(16, 185, 129, 0.3); background: rgba(16, 185, 129, 0.05);">
+            <div class="venn-header">
+              <span class="venn-title"><i class="fa-solid fa-circle" style="color: var(--accent-emerald); font-size: 0.7rem;"></i> Shared Vocabulary (A ∩ B)</span>
+              <span id="venn-count-shared" class="venn-count" style="background: rgba(16, 185, 129, 0.2); color: #6ee7b7;">0</span>
+            </div>
+            <div id="venn-chips-shared" class="venn-chips-wrap"></div>
+          </div>
+
+          <div class="venn-column">
+            <div class="venn-header">
+              <span class="venn-title"><i class="fa-solid fa-circle" style="color: var(--accent-purple); font-size: 0.7rem;"></i> Only in Sentence B</span>
+              <span id="venn-count-b" class="venn-count">0</span>
+            </div>
+            <div id="venn-chips-b" class="venn-chips-wrap"></div>
+          </div>
+        </div>
+
+        <!-- Closest-Pair Semantic Word Analysis -->
+        <div class="closest-pairs-table-wrapper">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem; flex-wrap: wrap; gap: 0.5rem;">
+            <div>
+              <h3 style="font-family: var(--font-display); font-size: 1.15rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 0.5rem;">
+                <i class="fa-solid fa-link" style="color: var(--accent-cyan);"></i> Closest-Pair Vector Analysis (Sentence A ↔ Sentence B)
+              </h3>
+              <p style="font-size: 0.78rem; color: var(--text-muted); margin-top: 0.15rem;">
+                Cross-comparing individual word vectors using cosine similarity, ranked from strongest to weakest semantic match.
+              </p>
+            </div>
+            <span class="preset-label" style="font-size: 0.75rem;">Ranked by Vector Cosine</span>
+          </div>
+
+          <div id="closest-pairs-list"></div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ======================================================================
+         SECTION 4: INTERACTIVE 3D EMBEDDING SPACE (THREE.JS)
+         ====================================================================== -->
+    <section id="sec-3d-space" class="content-section">
+      <div class="sec-header">
+        <div>
+          <div class="sec-tag"><i class="fa-solid fa-cube"></i> Feature 04</div>
+          <h2 class="sec-title">Interactive 3D Embedding Space</h2>
+          <p class="sec-desc">
+            Explore 60+ semantic vocabulary tokens projected into 3D using mathematical Principal Component Analysis (PCA with Jacobi eigenvalue decomposition). Rotate, zoom, inspect embeddings, and inject custom words!
+          </p>
+        </div>
+        <div class="sec-actions">
+          <button class="btn btn-secondary btn-sm" onclick="reset3DCamera()">
+            <i class="fa-solid fa-video"></i> Reset View
+          </button>
+          <button class="btn btn-secondary btn-sm" onclick="toggleAutoRotate()">
+            <i class="fa-solid fa-rotate"></i> Auto-Rotate: <span id="btn-autorotate-label">ON</span>
+          </button>
+          <button class="btn btn-secondary btn-sm" onclick="openTheoryModal()">
+            <i class="fa-solid fa-calculator"></i> PCA Math
+          </button>
+        </div>
+      </div>
+
+      <div class="glass-card" style="padding: 1.25rem;">
+        <!-- Three.js Canvas Container -->
+        <div class="three-box-wrapper">
+          <canvas id="three-canvas"></canvas>
+
+          <!-- Top Overlay Controls -->
+          <div class="three-top-controls">
+            <!-- Cluster Filter -->
+            <select id="three-cluster-filter" class="input-box" style="padding: 0.35rem 0.65rem; font-size: 0.78rem; width: 160px; height: 32px;" onchange="filterThreeCluster()">
+              <option value="all">All Clusters (60+ words)</option>
+              <option value="ai">AI & Computing</option>
+              <option value="nature">Nature & Animals</option>
+              <option value="science">Science & Physics</option>
+              <option value="royalty">Royalty & Society</option>
+              <option value="emotion">Emotions & Mind</option>
+              <option value="action">Actions & Verbs</option>
+              <option value="tools">Tools & Artifacts</option>
+            </select>
+
+            <!-- Word Search & Spotlight -->
+            <input type="text" id="three-search-input" class="input-box" style="padding: 0.35rem 0.65rem; font-size: 0.78rem; width: 140px; height: 32px;" placeholder="Find word..." onkeydown="if(event.key==='Enter') searchSpotlightWord()">
+            <button class="btn btn-secondary btn-sm" style="padding: 0.35rem 0.65rem; height: 32px;" onclick="searchSpotlightWord()">
+              <i class="fa-solid fa-magnifying-glass"></i>
+            </button>
+
+            <!-- View Toggles -->
+            <button class="btn btn-secondary btn-sm" style="padding: 0.35rem 0.65rem; height: 32px;" onclick="toggleThreeLabels()">
+              <i class="fa-solid fa-tag"></i> Labels: <span id="label-toggle-state">ON</span>
+            </button>
+            <button class="btn btn-secondary btn-sm" style="padding: 0.35rem 0.65rem; height: 32px;" onclick="toggleThreeLines()">
+              <i class="fa-solid fa-bezier-curve"></i> Lines: <span id="lines-toggle-state">ON</span>
+            </button>
+            <button class="btn btn-secondary btn-sm" style="padding: 0.35rem 0.65rem; height: 32px;" onclick="toggleThreeGrid()">
+              <i class="fa-solid fa-border-all"></i> Grid
+            </button>
+          </div>
+
+          <!-- Bottom HUD Stats -->
+          <div class="three-bottom-hud">
+            <span><i class="fa-solid fa-cube" style="color: var(--accent-cyan);"></i> Active 3D Tokens: <strong id="hud-token-count" style="color: #fff; font-family: var(--font-mono);">64</strong></span>
+            <span><i class="fa-solid fa-compass" style="color: var(--accent-purple);"></i> Drag: Rotate | Right-Click: Pan | Scroll: Zoom</span>
+            <span><i class="fa-solid fa-hand-pointer" style="color: var(--accent-emerald);"></i> Hover: Tooltip | Click: Inspect Node</span>
+          </div>
+
+          <!-- Hover Tooltip -->
+          <div id="three-hover-tooltip" class="three-node-tooltip">
+            <div id="tooltip-title" class="tooltip-word-title">Word</div>
+            <div id="tooltip-cluster" class="tooltip-cluster-tag">Cluster</div>
+            <div id="tooltip-coords" class="tooltip-coords-tag">X: 0.0 | Y: 0.0 | Z: 0.0</div>
+            <div id="tooltip-nearest" style="font-size: 0.68rem; color: #cbd5e1; margin-top: 0.35rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 0.35rem;"></div>
+          </div>
+
+          <!-- Side Docked Node Inspector (Opens on Click) -->
+          <div id="three-side-inspector" class="three-docked-inspector" style="display: none;">
+            <div class="inspector-top-row">
+              <div>
+                <div style="font-size: 0.68rem; color: var(--text-dim); text-transform: uppercase;">Selected 3D Node</div>
+                <div id="insp-word-title" style="font-family: var(--font-display); font-size: 1.45rem; font-weight: 800; color: #fff;">-</div>
+              </div>
+              <button class="btn btn-secondary btn-sm" style="padding: 0.3rem 0.5rem;" onclick="closeSideInspector()">
+                <i class="fa-solid fa-xmark"></i>
+              </button>
+            </div>
+
+            <div>
+              <div style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase;">Semantic Cluster</div>
+              <div id="insp-cluster-name" style="font-size: 0.85rem; font-weight: 700; color: var(--accent-cyan); margin-top: 0.15rem;">-</div>
+            </div>
+
+            <div>
+              <div style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase;">3D PCA Coordinates</div>
+              <div id="insp-coords-xyz" style="font-family: var(--font-mono); font-size: 0.78rem; color: #38bdf8; background: rgba(0,0,0,0.3); padding: 0.4rem 0.6rem; border-radius: var(--radius-sm); margin-top: 0.25rem;">-</div>
+            </div>
+
+            <div>
+              <div style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.35rem;">
+                High-Dim Feature Vector (16 Dimensions)
+              </div>
+              <div id="insp-vector-bars" class="vector-bars-mini"></div>
+            </div>
+
+            <div>
+              <div style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; margin-bottom: 0.35rem;">
+                Top 5 Nearest Neighbors (Cosine)
+              </div>
+              <div id="insp-nearest-list" style="display: flex; flex-direction: column; gap: 0.4rem;"></div>
+            </div>
+
+            <button class="btn btn-purple btn-sm" style="margin-top: 0.5rem;" onclick="focusCameraOnCurrentNode()">
+              <i class="fa-solid fa-crosshairs"></i> Center Camera
+            </button>
+          </div>
+        </div>
+
+        <!-- Custom Word Injector into 3D Space -->
+        <div style="margin-top: 1.25rem; padding: 1.15rem 1.35rem; background: rgba(13, 18, 38, 0.7); border: 1px solid var(--border-subtle); border-radius: var(--radius-md);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.6rem; flex-wrap: wrap; gap: 0.5rem;">
+            <div>
+              <span style="font-size: 0.85rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 0.4rem;">
+                <i class="fa-solid fa-plus-circle" style="color: var(--accent-cyan);"></i> Inject Custom Words into 3D Embedding Space
+              </span>
+              <span style="font-size: 0.75rem; color: var(--text-muted);">
+                Type any new word or sentence. Its high-dimensional embedding is synthesized and projected via PCA in real time!
+              </span>
+            </div>
+            <span style="font-family: var(--font-mono); font-size: 0.72rem; color: var(--accent-emerald);">
+              <i class="fa-solid fa-check-circle"></i> PCA Re-calculation Active
+            </span>
+          </div>
+
+          <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+            <input type="text" id="custom-3d-word-input" class="input-box" style="flex: 1; min-width: 240px; padding: 0.55rem 0.85rem;" placeholder="e.g. supernova, cybernetics, philosophy, dolphin...">
+            <button class="btn btn-primary btn-sm" onclick="injectCustomWord3D()">
+              <i class="fa-solid fa-atom"></i> Embed & Project to 3D
+            </button>
+            <button class="btn btn-secondary btn-sm" onclick="reset3DToDefault()">
+              <i class="fa-solid fa-rotate-left"></i> Reset to Default Vocab
+            </button>
+          </div>
+        </div>
+
+        <!-- PCA Explainer -->
+        <div class="edu-banner" style="margin-top: 1rem;">
+          <i class="fa-solid fa-lightbulb"></i>
+          <div class="edu-banner-text">
+            <strong>How Mathematical PCA Projection Works:</strong> Each word begins as a 16-dimensional continuous feature vector $\mathbf{x} \in \mathbb{R}^{16}$. We construct the mean-centered data matrix $\mathbf{X}_c = \mathbf{X} - \boldsymbol{\mu}$ and compute the $16 \times 16$ covariance matrix $\mathbf{C} = \frac{1}{N-1}\mathbf{X}_c^T \mathbf{X}_c$. Using the <em>Jacobi Eigenvalue Algorithm</em>, we extract the top 3 eigenvectors $[\mathbf{v}_1, \mathbf{v}_2, \mathbf{v}_3]$ corresponding to the largest eigenvalues. Projecting $\mathbf{z}_i = \mathbf{x}_{c, i} \cdot [\mathbf{v}_1, \mathbf{v}_2, \mathbf{v}_3]$ yields the $(x, y, z)$ coordinates that preserve maximum semantic variance without arbitrary random numbers.
+          </div>
+        </div>
+
+      </div>
+    </section>
+    <!-- ======================================================================
+         SECTION 5: TRY YOUR OWN TOKENIZATION & PLAYGROUND
+         ====================================================================== -->
+    <section id="sec-playground" class="content-section">
+      <div class="sec-header">
+        <div>
+          <div class="sec-tag"><i class="fa-solid fa-flask"></i> Feature 05</div>
+          <h2 class="sec-title">Tokenizer Playground & Embedding Analytics</h2>
+          <p class="sec-desc">
+            Test different tokenization algorithms (Word-level, Character-level, Subword-style) on any text. Dynamically generate 5 distinct interactive Plotly visualizations!
+          </p>
+        </div>
+        <div class="sec-actions">
+          <button class="btn btn-secondary btn-sm" onclick="loadPlaygroundSample()">
+            <i class="fa-solid fa-wand-magic-sparkles"></i> Sample Sentence
+          </button>
+          <button class="btn btn-secondary btn-sm" onclick="resetPlaygroundSection()">
+            <i class="fa-solid fa-rotate-left"></i> Reset
+          </button>
+        </div>
+      </div>
+
+      <div class="glass-card" style="padding: 1.75rem;">
+        <label class="preset-label" style="font-size: 0.82rem; font-weight: 600; color: #fff; margin-bottom: 0.4rem; display: block;">
+          Custom Text for Tokenization & Embedding Space:
+        </label>
+        <textarea id="play-input-text" class="input-box" rows="2" placeholder="Type or paste custom text to analyze...">Unbelievable transformations occur within neural language models when processing complex sequences.</textarea>
+
+        <div class="preset-row">
+          <span class="preset-label">Presets:</span>
+          <button class="preset-btn" onclick="setPlaygroundInput('Unbelievable transformations occur within neural language models when processing complex sequences.')">Subword Morphology</button>
+          <button class="preset-btn" onclick="setPlaygroundInput('Machine learning algorithms discover representations in high dimensional spaces.')">Machine Learning</button>
+          <button class="preset-btn" onclick="setPlaygroundInput('Quantum computers utilize qubits for superposition and entanglement phenomena.')">Quantum Computing</button>
+        </div>
+
+        <!-- Tokenizer Method Selector -->
+        <div style="display: flex; flex-wrap: wrap; gap: 1.25rem; align-items: center; margin-top: 1rem; padding: 0.85rem 1.15rem; background: rgba(10, 14, 28, 0.65); border-radius: var(--radius-md); border: 1px solid var(--border-subtle);">
+          <span style="font-size: 0.82rem; font-weight: 700; color: #fff; display: flex; align-items: center; gap: 0.4rem;">
+            <i class="fa-solid fa-sliders" style="color: var(--accent-cyan);"></i> Tokenization Mode:
+          </span>
+
+          <label style="font-size: 0.82rem; color: #cbd5e1; display: flex; align-items: center; gap: 0.45rem; cursor: pointer;">
+            <input type="radio" name="play-tokenizer-mode" value="word" checked onchange="tokenizePlayground()">
+            <strong>Word-Level</strong> (Whitespace & Punctuation)
+          </label>
+
+          <label style="font-size: 0.82rem; color: #cbd5e1; display: flex; align-items: center; gap: 0.45rem; cursor: pointer;">
+            <input type="radio" name="play-tokenizer-mode" value="subword" onchange="tokenizePlayground()">
+            <strong>Subword-Style</strong> (BPE/WordPiece `##` Roots)
+          </label>
+
+          <label style="font-size: 0.82rem; color: #cbd5e1; display: flex; align-items: center; gap: 0.45rem; cursor: pointer;">
+            <input type="radio" name="play-tokenizer-mode" value="char" onchange="tokenizePlayground()">
+            <strong>Character-Level</strong> (Atomic Chars)
+          </label>
+        </div>
+
+        <div style="margin-top: 1.25rem; display: flex; gap: 0.85rem; align-items: center;">
+          <button class="btn btn-primary" onclick="tokenizePlayground()">
+            <i class="fa-solid fa-flask"></i> Tokenize & Visualize
+          </button>
+          <button class="btn btn-secondary" onclick="document.getElementById('play-input-text').value=''; document.getElementById('play-input-text').focus();">
+            <i class="fa-solid fa-eraser"></i> Clear
+          </button>
+        </div>
+
+        <!-- Summary Metrics -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <span class="stat-label">Generated Tokens</span>
+            <span id="play-stat-tokens" class="stat-num">0</span>
+            <span class="stat-sub">Total token count</span>
+          </div>
+          <div class="stat-card purple">
+            <span class="stat-label">Unique Tokens</span>
+            <span id="play-stat-unique" class="stat-num">0</span>
+            <span class="stat-sub">Distinct token types</span>
+          </div>
+          <div class="stat-card emerald">
+            <span class="stat-label">Avg Token Length</span>
+            <span id="play-stat-avglen" class="stat-num">0.0</span>
+            <span class="stat-sub">Characters per token</span>
+          </div>
+          <div class="stat-card amber">
+            <span class="stat-label">Compression Ratio</span>
+            <span id="play-stat-ratio" class="stat-num">0.0x</span>
+            <span class="stat-sub">Chars / Token count</span>
+          </div>
+        </div>
+
+        <!-- Generated Token Blocks -->
+        <div style="margin-top: 1.25rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+            <label class="preset-label" style="font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">
+              Generated Token Stream (Click to spotlight in charts):
+            </label>
+            <span id="play-token-spotlight-label" style="font-family: var(--font-mono); font-size: 0.75rem; color: var(--accent-cyan);"></span>
+          </div>
+          <div id="play-token-chips" class="token-blocks-flow" style="max-height: 140px; overflow-y: auto; padding: 0.4rem; background: rgba(8, 12, 26, 0.5); border-radius: var(--radius-md); border: 1px solid var(--border-subtle);"></div>
+        </div>
+
+        <!-- 5 Interactive Plotly Charts in Tabbed Panels -->
+        <div style="margin-top: 2rem;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.75rem; flex-wrap: wrap; gap: 0.5rem;">
+            <div class="tab-pills-row" style="margin-bottom: 0; border-bottom: none;">
+              <button class="tab-pill-btn active" onclick="switchPlayTab('pca2d')">
+                <i class="fa-solid fa-chart-scatter"></i> 1. 2D Embedding Scatter
+              </button>
+              <button class="tab-pill-btn" onclick="switchPlayTab('pca3d')">
+                <i class="fa-solid fa-cubes"></i> 2. 3D Embedding Scatter
+              </button>
+              <button class="tab-pill-btn" onclick="switchPlayTab('freq')">
+                <i class="fa-solid fa-chart-column"></i> 3. Token Frequencies
+              </button>
+              <button class="tab-pill-btn" onclick="switchPlayTab('pos')">
+                <i class="fa-solid fa-timeline"></i> 4. Position & Spans
+              </button>
+              <button class="tab-pill-btn" onclick="switchPlayTab('heatmap')">
+                <i class="fa-solid fa-table-cells"></i> 5. Cosine Similarity Heatmap
+              </button>
+            </div>
+          </div>
+
+          <!-- Plot 1: 2D PCA Scatter -->
+          <div id="play-tab-pca2d" class="chart-panel-view active">
+            <div id="plotly-pca-2d" class="plotly-render-box"></div>
+          </div>
+
+          <!-- Plot 2: 3D PCA Scatter -->
+          <div id="play-tab-pca3d" class="chart-panel-view">
+            <div id="plotly-pca-3d" class="plotly-render-box"></div>
+          </div>
+
+          <!-- Plot 3: Token Frequency Bar Chart -->
+          <div id="play-tab-freq" class="chart-panel-view">
+            <div id="plotly-freq-bar" class="plotly-render-box"></div>
+          </div>
+
+          <!-- Plot 4: Position Timeline Chart -->
+          <div id="play-tab-pos" class="chart-panel-view">
+            <div id="plotly-pos-timeline" class="plotly-render-box"></div>
+          </div>
+
+          <!-- Plot 5: Token-to-Token Cosine Heatmap -->
+          <div id="play-tab-heatmap" class="chart-panel-view">
+            <div id="plotly-sim-heatmap" class="plotly-render-box"></div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ==========================================================================
+       NLP KNOWLEDGE BASE MODAL
+       ========================================================================== -->
+  <div id="theory-modal" class="modal-overlay" onclick="if(event.target===this) closeTheoryModal()">
+    <div class="modal-window">
+      <div class="modal-header-bar">
+        <div style="display: flex; align-items: center; gap: 0.75rem;">
+          <div style="width: 36px; height: 36px; border-radius: var(--radius-sm); background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple)); display: flex; align-items: center; justify-content: center; color: #070913; font-size: 1.1rem;">
+            <i class="fa-solid fa-book-atlas"></i>
+          </div>
+          <div>
+            <h3 style="font-family: var(--font-display); font-size: 1.25rem; font-weight: 800; color: #fff;">NLP Learning Knowledge Base</h3>
+            <span style="font-size: 0.72rem; color: var(--text-muted); font-family: var(--font-mono);">Theory, Definitions & Mathematical Formulations</span>
+          </div>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="closeTheoryModal()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <div class="modal-scroll-area">
+        <!-- Topic 1: Vocabulary -->
+        <div class="theory-article-card">
+          <div class="theory-article-title"><i class="fa-solid fa-book"></i> 1. What is a Vocabulary?</div>
+          <p>
+            A <strong>vocabulary</strong> ($\mathcal{V}$) is the finite set of distinct, recognizable linguistic units (words, subwords, or characters) that a natural language model knows. The size of the vocabulary is denoted as $|\mathcal{V}|$. Any word not contained in $\mathcal{V}$ is classified as <em>Out-of-Vocabulary</em> (OOV) and is usually replaced by an unknown token `[UNK]`.
+          </p>
+        </div>
+
+        <!-- Topic 2: Token & Tokenization -->
+        <div class="theory-article-card">
+          <div class="theory-article-title"><i class="fa-solid fa-scissors"></i> 2. What is a Token & Tokenization?</div>
+          <p>
+            <strong>Tokenization</strong> is the foundational preprocessing stage in NLP that segments continuous raw text into discrete atomic chunks called <strong>tokens</strong>.
+          </p>
+          <ul style="margin: 0.5rem 0 0.5rem 1.25rem; font-size: 0.88rem; color: #cbd5e1; line-height: 1.6;">
+            <li><strong>Word-level:</strong> Splits by spaces and punctuation. Yields large vocabularies and suffers from OOV on new words.</li>
+            <li><strong>Character-level:</strong> Splits text into individual letters/characters. Small vocabulary, but creates extremely long token sequences that degrade model memory.</li>
+            <li><strong>Subword-level (BPE / WordPiece):</strong> Deconstructs frequent words as whole tokens and rare/inflected words into subword roots (e.g. <em>unbreakable</em> &rarr; <code>un</code> + <code>##break</code> + <code>##able</code>). Balances vocabulary compactness and infinite expressiveness.</li>
+          </ul>
+        </div>
+
+        <!-- Topic 3: Token ID -->
+        <div class="theory-article-card">
+          <div class="theory-article-title"><i class="fa-solid fa-id-card"></i> 3. What is a Token ID?</div>
+          <p>
+            Computers cannot process raw strings; neural networks operate strictly on mathematical tensors. A <strong>Token ID</strong> is a unique integer index assigned to each token in the vocabulary lookup dictionary:
+          </p>
+          <div class="math-formula-box">
+            \text{Token} \xrightarrow{\mathcal{V}} \text{Integer ID} \quad \text{e.g., } "neural" \mapsto 4129, \quad "network" \mapsto 2897
+          </div>
+          <p>
+            This integer acts as the row index into the model's embedding matrix $\mathbf{W}_e \in \mathbb{R}^{|\mathcal{V}| \times d}$.
+          </p>
+        </div>
+
+        <!-- Topic 4: Word Embeddings -->
+        <div class="theory-article-card">
+          <div class="theory-article-title"><i class="fa-solid fa-layer-group"></i> 4. What are Vector Embeddings?</div>
+          <p>
+            A <strong>word embedding</strong> is a continuous, dense vector representation $\mathbf{e} \in \mathbb{R}^d$ where words with similar contextual meanings reside close to each other in vector space (the <em>Distributional Hypothesis</em>: "A word is characterized by the company it keeps").
+          </p>
+          <ul style="margin: 0.5rem 0 0.5rem 1.25rem; font-size: 0.88rem; color: #cbd5e1; line-height: 1.6;">
+            <li><strong>Sparse One-Hot:</strong> High-dimensional vector of size $|\mathcal{V}|$ with a single 1 and all 0s. Zero semantic similarity between words.</li>
+            <li><strong>Dense Embeddings:</strong> Low-dimensional continuous vectors ($d = 128 \dots 4096$) capturing semantic analogies such as $\mathbf{v}_{\text{king}} - \mathbf{v}_{\text{man}} + \mathbf{v}_{\text{woman}} \approx \mathbf{v}_{\text{queen}}$.</li>
+          </ul>
+        </div>
+
+        <!-- Topic 5: Cosine Similarity -->
+        <div class="theory-article-card">
+          <div class="theory-article-title"><i class="fa-solid fa-scale-balanced"></i> 5. What is Cosine Similarity?</div>
+          <p>
+            <strong>Cosine Similarity</strong> computes the cosine of the angle $\theta$ between two non-zero vectors $\mathbf{u}$ and $\mathbf{v}$. It measures directional alignment irrespective of vector magnitude:
+          </p>
+          <div class="math-formula-box">
+            \text{Cosine Similarity}(\mathbf{u}, \mathbf{v}) = \cos(\theta) = \frac{\mathbf{u} \cdot \mathbf{v}}{\|\mathbf{u}\|_2 \|\mathbf{v}\|_2} = \frac{\sum_{i=1}^d u_i v_i}{\sqrt{\sum_{i=1}^d u_i^2} \sqrt{\sum_{i=1}^d v_i^2}}
+          </div>
+          <p>
+            Values range from $-1.0$ (diametrically opposite) to $+1.0$ (identical direction), with $0.0$ indicating orthogonality (no correlation).
+          </p>
+        </div>
+
+        <!-- Topic 6: Dimensionality Reduction & PCA -->
+        <div class="theory-article-card">
+          <div class="theory-article-title"><i class="fa-solid fa-calculator"></i> 6. Dimensionality Reduction & PCA (Principal Component Analysis)</div>
+          <p>
+            Word embeddings exist in high dimensions ($d = 16 \dots 1536$), which humans cannot visually perceive. <strong>Dimensionality Reduction</strong> projects high-dimensional data into 2D or 3D while preserving as much structural variance as possible.
+          </p>
+          <p style="margin-top: 0.5rem;">
+            <strong>PCA Step-by-Step Procedure:</strong>
+          </p>
+          <ol style="margin: 0.5rem 0 0.5rem 1.25rem; font-size: 0.88rem; color: #cbd5e1; line-height: 1.6;">
+            <li><strong>Center the Data:</strong> Subtract the mean feature vector $\boldsymbol{\mu} = \frac{1}{N}\sum_{i=1}^N \mathbf{x}_i$ so that $\mathbf{X}_c = \mathbf{X} - \boldsymbol{\mu}$.</li>
+            <li><strong>Compute Covariance Matrix:</strong> $\mathbf{C} = \frac{1}{N-1}\mathbf{X}_c^T \mathbf{X}_c \in \mathbb{R}^{d \times d}$.</li>
+            <li><strong>Eigenvalue Decomposition:</strong> Solve $\mathbf{C} \mathbf{v}_k = \lambda_k \mathbf{v}_k$ using the Jacobi eigenvalue algorithm.</li>
+            <li><strong>Sort Eigenvectors:</strong> Rank by descending eigenvalues $\lambda_1 \ge \lambda_2 \ge \lambda_3 \dots$.</li>
+            <li><strong>Linear Projection:</strong> Project each centered vector onto the top 3 principal axes: $\mathbf{z}_i = \mathbf{x}_{c, i} \cdot [\mathbf{v}_1, \mathbf{v}_2, \mathbf{v}_3]$.</li>
+          </ol>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Container -->
+  <div id="toast-tray" class="toast-tray"></div>
+
+  <!-- Footer -->
+  <footer>
+    <div style="max-width: 1550px; margin: 0 auto; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+      <div style="display: flex; align-items: center; gap: 0.65rem;">
+        <i class="fa-solid fa-brain" style="color: var(--accent-cyan); font-size: 1.2rem;"></i>
+        <strong style="color: #fff; font-family: var(--font-display);">NEUROLEX 3D</strong>
+        <span>&mdash; Interactive NLP & Vector Embedding Laboratory</span>
+      </div>
+      <div style="font-size: 0.78rem;">
+        Engineered with <span style="color: var(--accent-rose);">♥</span> using Three.js & Plotly.js | Pure Client-Side Single File
+      </div>
+    </div>
+  </footer>
+
+  <!-- ==========================================================================
+       JAVASCRIPT CODE ENGINE
+       ========================================================================== -->
+  <script>
+    /* ==========================================================================
+       1. MATHEMATICAL UTILITIES & PCA ALGORITHM (JACOBI EIGENVALUE)
+       ========================================================================== */
+
+    // Dot product of two vectors
+    function vectorDot(u, v) {
+      let sum = 0;
+      for (let i = 0; i < u.length; i++) sum += u[i] * v[i];
+      return sum;
+    }
+
+    // L2 Euclidean norm
+    function vectorNorm(u) {
+      let sum = 0;
+      for (let i = 0; i < u.length; i++) sum += u[i] * u[i];
+      return Math.sqrt(sum);
+    }
+
+    // Cosine similarity
+    function cosineSimilarity(u, v) {
+      const nu = vectorNorm(u);
+      const nv = vectorNorm(v);
+      if (nu === 0 || nv === 0) return 0;
+      return vectorDot(u, v) / (nu * nv);
+    }
+
+    // Euclidean distance
+    function euclideanDistance(u, v) {
+      let sum = 0;
+      for (let i = 0; i < u.length; i++) {
+        const diff = u[i] - v[i];
+        sum += diff * diff;
+      }
+      return Math.sqrt(sum);
+    }
+
+    // Jaccard similarity of two sets of strings
+    function jaccardSimilarity(setA, setB) {
+      if (setA.size === 0 && setB.size === 0) return 1.0;
+      const union = new Set([...setA, ...setB]);
+      if (union.size === 0) return 0.0;
+      let intersectionCount = 0;
+      for (const item of setA) {
+        if (setB.has(item)) intersectionCount++;
+      }
+      return intersectionCount / union.size;
+    }
+
+    // Exact Jacobi Eigenvalue Algorithm for Real Symmetric Matrix A
+    function jacobiEigenvalue(A, maxIter = 100, tol = 1e-8) {
+      const n = A.length;
+      // Initialize eigenvector matrix V as Identity
+      const V = Array.from({ length: n }, (_, i) => 
+        Array.from({ length: n }, (_, j) => (i === j ? 1.0 : 0.0))
+      );
+      // Copy matrix A to D
+      const D = A.map(row => [...row]);
+
+      for (let iter = 0; iter < maxIter; iter++) {
+        // Find largest off-diagonal element
+        let maxVal = 0.0;
+        let p = 0, q = 1;
+        for (let i = 0; i < n; i++) {
+          for (let j = i + 1; j < n; j++) {
+            const val = Math.abs(D[i][j]);
+            if (val > maxVal) {
+              maxVal = val;
+              p = i;
+              q = j;
+            }
+          }
+        }
+
+        if (maxVal < tol) break;
+
+        // Compute rotation angle theta
+        const diff = D[q][q] - D[p][p];
+        let theta;
+        if (Math.abs(diff) < 1e-12) {
+          theta = (D[p][q] > 0) ? Math.PI / 4 : -Math.PI / 4;
+        } else {
+          theta = 0.5 * Math.atan2(2 * D[p][q], diff);
+        }
+
+        const c = Math.cos(theta);
+        const s = Math.sin(theta);
+
+        // Update D
+        const D_pp = D[p][p];
+        const D_qq = D[q][q];
+        const D_pq = D[p][q];
+
+        D[p][p] = c * c * D_pp - 2 * s * c * D_pq + s * s * D_qq;
+        D[q][q] = s * s * D_pp + 2 * s * c * D_pq + c * c * D_qq;
+        D[p][q] = 0.0;
+        D[q][p] = 0.0;
+
+        for (let i = 0; i < n; i++) {
+          if (i !== p && i !== q) {
+            const D_ip = D[i][p];
+            const D_iq = D[i][q];
+            D[i][p] = c * D_ip - s * D_iq;
+            D[p][i] = D[i][p];
+            D[i][q] = s * D_ip + c * D_iq;
+            D[q][i] = D[i][q];
+          }
+        }
+
+        // Update eigenvector matrix V
+        for (let i = 0; i < n; i++) {
+          const V_ip = V[i][p];
+          const V_iq = V[i][q];
+          V[i][p] = c * V_ip - s * V_iq;
+          V[i][q] = s * V_ip + c * V_iq;
+        }
+      }
+
+      // Extract eigenvalues and corresponding eigenvectors
+      const eigenPairs = [];
+      for (let i = 0; i < n; i++) {
+        const val = D[i][i];
+        const vec = [];
+        for (let r = 0; r < n; r++) {
+          vec.push(V[r][i]);
+        }
+        eigenPairs.push({ value: val, vector: vec });
+      }
+
+      // Sort descending by eigenvalue
+      eigenPairs.sort((a, b) => b.value - a.value);
+
+      return {
+        values: eigenPairs.map(p => p.value),
+        vectors: eigenPairs.map(p => p.vector) // columns of V
+      };
+    }
+
+    // PCA Projection to targetDimensions (2 or 3)
+    function performPCA(dataMatrix, targetDim = 3) {
+      const n = dataMatrix.length;
+      if (n === 0) return [];
+      const d = dataMatrix[0].length;
+
+      // 1. Mean center the data
+      const means = new Array(d).fill(0);
+      for (let i = 0; i < n; i++) {
+        for (let j = 0; j < d; j++) {
+          means[j] += dataMatrix[i][j];
+        }
+      }
+      for (let j = 0; j < d; j++) means[j] /= n;
+
+      const centered = dataMatrix.map(row => row.map((val, j) => val - means[j]));
+
+      // If very few samples (<= targetDim), project with fallback basis
+      if (n <= targetDim) {
+        return centered.map((row, idx) => {
+          const coords = [];
+          for (let k = 0; k < targetDim; k++) {
+            coords.push((row[k] || 0) * 15 + (idx - n / 2) * 8);
+          }
+          return coords;
+        });
+      }
+
+      // 2. Covariance matrix C (d x d)
+      const C = Array.from({ length: d }, () => new Array(d).fill(0));
+      const denom = Math.max(1, n - 1);
+      for (let i = 0; i < d; i++) {
+        for (let j = i; j < d; j++) {
+          let sum = 0;
+          for (let k = 0; k < n; k++) {
+            sum += centered[k][i] * centered[k][j];
+          }
+          C[i][j] = sum / denom;
+          C[j][i] = C[i][j];
+        }
+      }
+
+      // 3. Jacobi Decomposition on Covariance Matrix
+      const { vectors } = jacobiEigenvalue(C);
+
+      // 4. Project centered data onto top targetDim eigenvectors
+      const projected = [];
+      for (let i = 0; i < n; i++) {
+        const point = [];
+        for (let k = 0; k < targetDim; k++) {
+          let coord = 0;
+          const eigVec = vectors[k];
+          for (let j = 0; j < d; j++) {
+            coord += centered[i][j] * eigVec[j];
+          }
+          point.push(coord);
+        }
+        projected.push(point);
+      }
+
+      return projected;
+    }
+
+    /* ==========================================================================
+       2. SEMANTIC EMBEDDING KNOWLEDGE BASE & DYNAMIC VECTOR SYNTHESIZER
+       ========================================================================== */
+
+    // 16 Semantic Feature Basis:
+    // [0: animate, 1: tech, 2: science, 3: royalty, 4: emotion, 5: action, 6: cognition, 7: nature,
+    //  8: magnitude, 9: creative, 10: tools, 11: speed, 12: light, 13: solid, 14: language, 15: grammar]
+    const SEMANTIC_CLUSTERS = {
+      ai: { name: "AI & Computing", color: 0x00f5ff, hex: "#00f5ff" },
+      nature: { name: "Nature & Animals", color: 0x10b981, hex: "#10b981" },
+      science: { name: "Science & Physics", color: 0x3b82f6, hex: "#3b82f6" },
+      royalty: { name: "Royalty & Society", color: 0xf59e0b, hex: "#f59e0b" },
+      emotion: { name: "Emotions & Mind", color: 0xec4899, hex: "#ec4899" },
+      action: { name: "Actions & Verbs", color: 0xa855f7, hex: "#a855f7" },
+      tools: { name: "Tools & Artifacts", color: 0x8b5cf6, hex: "#8b5cf6" }
+    };
+
+    // Pre-calibrated curated dictionary of 64 words across 7 semantic clusters
+    const CURATED_VOCAB_DB = {
+      // AI & Computing
+      "neural":       { cluster: "ai", vec: [0.3, 0.95, 0.8, 0.1, 0.1, 0.2, 0.9, 0.1, 0.4, 0.5, 0.7, 0.5, 0.3, 0.2, 0.7, 0.0] },
+      "model":        { cluster: "ai", vec: [0.1, 0.9, 0.7, 0.3, 0.1, 0.3, 0.8, 0.1, 0.5, 0.6, 0.8, 0.3, 0.2, 0.4, 0.6, 0.0] },
+      "algorithm":    { cluster: "ai", vec: [0.1, 0.95, 0.9, 0.2, 0.1, 0.4, 0.9, 0.1, 0.3, 0.5, 0.8, 0.6, 0.2, 0.1, 0.7, 0.0] },
+      "tensor":       { cluster: "ai", vec: [0.1, 0.95, 0.95, 0.1, 0.0, 0.2, 0.8, 0.1, 0.6, 0.4, 0.6, 0.4, 0.2, 0.2, 0.5, 0.0] },
+      "token":        { cluster: "ai", vec: [0.1, 0.85, 0.5, 0.2, 0.1, 0.3, 0.7, 0.1, 0.2, 0.6, 0.5, 0.3, 0.2, 0.3, 0.95, 0.0] },
+      "vector":       { cluster: "ai", vec: [0.1, 0.9, 0.95, 0.1, 0.0, 0.3, 0.8, 0.1, 0.5, 0.4, 0.6, 0.4, 0.2, 0.2, 0.6, 0.0] },
+      "compute":      { cluster: "ai", vec: [0.1, 0.95, 0.8, 0.1, 0.1, 0.7, 0.7, 0.1, 0.6, 0.4, 0.8, 0.7, 0.3, 0.3, 0.5, 0.0] },
+      "data":         { cluster: "ai", vec: [0.1, 0.9, 0.7, 0.2, 0.1, 0.2, 0.8, 0.1, 0.7, 0.4, 0.6, 0.4, 0.2, 0.3, 0.8, 0.0] },
+      "transformer":  { cluster: "ai", vec: [0.2, 0.95, 0.85, 0.2, 0.2, 0.5, 0.9, 0.1, 0.7, 0.7, 0.8, 0.6, 0.4, 0.3, 0.9, 0.0] },
+      "code":         { cluster: "ai", vec: [0.1, 0.9, 0.6, 0.1, 0.1, 0.4, 0.8, 0.1, 0.4, 0.8, 0.7, 0.4, 0.2, 0.2, 0.9, 0.0] },
+
+      // Nature & Animals
+      "wolf":         { cluster: "nature", vec: [0.95, 0.0, 0.2, 0.4, 0.5, 0.8, 0.4, 0.95, 0.5, 0.1, 0.1, 0.8, 0.1, 0.8, 0.2, 0.0] },
+      "lion":         { cluster: "nature", vec: [0.95, 0.0, 0.2, 0.8, 0.6, 0.8, 0.4, 0.95, 0.7, 0.2, 0.1, 0.8, 0.3, 0.8, 0.2, 0.0] },
+      "forest":       { cluster: "nature", vec: [0.85, 0.0, 0.3, 0.2, 0.6, 0.2, 0.3, 0.98, 0.8, 0.4, 0.2, 0.1, 0.3, 0.9, 0.1, 0.0] },
+      "ocean":        { cluster: "nature", vec: [0.75, 0.0, 0.5, 0.3, 0.7, 0.4, 0.4, 0.98, 0.95, 0.5, 0.2, 0.5, 0.4, 0.6, 0.1, 0.0] },
+      "river":        { cluster: "nature", vec: [0.7, 0.0, 0.3, 0.2, 0.6, 0.6, 0.3, 0.95, 0.6, 0.4, 0.2, 0.7, 0.3, 0.4, 0.1, 0.0] },
+      "tree":         { cluster: "nature", vec: [0.9, 0.0, 0.3, 0.2, 0.4, 0.1, 0.2, 0.98, 0.6, 0.3, 0.3, 0.1, 0.4, 0.95, 0.1, 0.0] },
+      "eagle":        { cluster: "nature", vec: [0.95, 0.0, 0.3, 0.6, 0.6, 0.9, 0.5, 0.95, 0.5, 0.3, 0.1, 0.9, 0.5, 0.7, 0.2, 0.0] },
+      "mountain":     { cluster: "nature", vec: [0.4, 0.0, 0.4, 0.3, 0.5, 0.1, 0.3, 0.95, 0.95, 0.3, 0.2, 0.1, 0.4, 0.98, 0.1, 0.0] },
+      "flower":       { cluster: "nature", vec: [0.85, 0.0, 0.2, 0.2, 0.8, 0.2, 0.2, 0.95, 0.2, 0.7, 0.1, 0.1, 0.7, 0.5, 0.1, 0.0] },
+
+      // Science & Physics
+      "quantum":      { cluster: "science", vec: [0.1, 0.8, 0.98, 0.1, 0.2, 0.5, 0.9, 0.3, -0.6, 0.4, 0.5, 0.8, 0.7, 0.1, 0.4, 0.0] },
+      "atom":         { cluster: "science", vec: [0.2, 0.5, 0.98, 0.1, 0.1, 0.4, 0.7, 0.4, -0.8, 0.2, 0.4, 0.7, 0.5, 0.6, 0.2, 0.0] },
+      "energy":       { cluster: "science", vec: [0.2, 0.7, 0.95, 0.2, 0.4, 0.8, 0.7, 0.6, 0.8, 0.4, 0.6, 0.8, 0.8, 0.2, 0.3, 0.0] },
+      "galaxy":       { cluster: "science", vec: [0.1, 0.4, 0.95, 0.4, 0.7, 0.5, 0.7, 0.5, 0.98, 0.6, 0.3, 0.6, 0.8, 0.4, 0.2, 0.0] },
+      "gravity":      { cluster: "science", vec: [0.1, 0.5, 0.98, 0.2, 0.2, 0.6, 0.8, 0.5, 0.8, 0.2, 0.3, 0.5, 0.2, 0.5, 0.2, 0.0] },
+      "planet":       { cluster: "science", vec: [0.4, 0.3, 0.9, 0.3, 0.5, 0.3, 0.5, 0.7, 0.9, 0.4, 0.2, 0.4, 0.5, 0.9, 0.2, 0.0] },
+      "light":        { cluster: "science", vec: [0.2, 0.6, 0.95, 0.2, 0.8, 0.7, 0.7, 0.6, 0.7, 0.7, 0.4, 0.98, 0.98, 0.1, 0.3, 0.0] },
+      "orbit":        { cluster: "science", vec: [0.1, 0.6, 0.95, 0.2, 0.3, 0.7, 0.7, 0.4, 0.8, 0.3, 0.5, 0.8, 0.4, 0.3, 0.2, 0.0] },
+
+      // Royalty & Society
+      "king":         { cluster: "royalty", vec: [0.95, 0.1, 0.2, 0.98, 0.4, 0.5, 0.7, 0.1, 0.7, 0.3, 0.3, 0.4, 0.6, 0.7, 0.4, 0.0] },
+      "queen":        { cluster: "royalty", vec: [0.95, 0.1, 0.2, 0.98, 0.6, 0.5, 0.7, 0.2, 0.7, 0.5, 0.3, 0.4, 0.7, 0.7, 0.4, 0.0] },
+      "prince":       { cluster: "royalty", vec: [0.95, 0.1, 0.2, 0.9, 0.5, 0.6, 0.6, 0.2, 0.6, 0.4, 0.3, 0.5, 0.5, 0.6, 0.3, 0.0] },
+      "castle":       { cluster: "royalty", vec: [0.3, 0.1, 0.2, 0.95, 0.4, 0.1, 0.3, 0.3, 0.8, 0.6, 0.5, 0.1, 0.3, 0.98, 0.2, 0.0] },
+      "crown":        { cluster: "royalty", vec: [0.3, 0.1, 0.1, 0.98, 0.5, 0.2, 0.4, 0.1, 0.4, 0.7, 0.6, 0.1, 0.8, 0.9, 0.2, 0.0] },
+      "empire":       { cluster: "royalty", vec: [0.6, 0.2, 0.3, 0.95, 0.3, 0.6, 0.7, 0.3, 0.95, 0.5, 0.4, 0.4, 0.5, 0.8, 0.4, 0.0] },
+      "palace":       { cluster: "royalty", vec: [0.4, 0.1, 0.2, 0.92, 0.5, 0.2, 0.4, 0.3, 0.8, 0.8, 0.5, 0.1, 0.6, 0.95, 0.2, 0.0] },
+      "ruler":        { cluster: "royalty", vec: [0.9, 0.2, 0.3, 0.95, 0.3, 0.6, 0.7, 0.1, 0.7, 0.3, 0.5, 0.4, 0.5, 0.6, 0.4, 0.0] },
+
+      // Emotions & Mind
+      "joy":          { cluster: "emotion", vec: [0.7, 0.1, 0.2, 0.2, 0.98, 0.6, 0.8, 0.4, 0.6, 0.7, 0.1, 0.7, 0.95, 0.1, 0.5, 0.0] },
+      "wisdom":       { cluster: "emotion", vec: [0.7, 0.2, 0.5, 0.5, 0.8, 0.3, 0.98, 0.4, 0.8, 0.6, 0.2, 0.2, 0.7, 0.2, 0.7, 0.0] },
+      "curiosity":    { cluster: "emotion", vec: [0.7, 0.5, 0.7, 0.2, 0.85, 0.7, 0.95, 0.4, 0.6, 0.8, 0.4, 0.6, 0.6, 0.1, 0.6, 0.0] },
+      "courage":      { cluster: "emotion", vec: [0.8, 0.1, 0.2, 0.6, 0.85, 0.8, 0.8, 0.3, 0.7, 0.4, 0.2, 0.7, 0.7, 0.4, 0.4, 0.0] },
+      "serenity":     { cluster: "emotion", vec: [0.6, 0.1, 0.3, 0.3, 0.9, 0.2, 0.8, 0.8, 0.6, 0.6, 0.1, 0.1, 0.6, 0.2, 0.3, 0.0] },
+      "passion":      { cluster: "emotion", vec: [0.8, 0.2, 0.2, 0.4, 0.95, 0.9, 0.8, 0.3, 0.8, 0.8, 0.2, 0.8, 0.9, 0.2, 0.5, 0.0] },
+      "truth":        { cluster: "emotion", vec: [0.5, 0.3, 0.7, 0.4, 0.7, 0.4, 0.98, 0.3, 0.8, 0.5, 0.3, 0.3, 0.8, 0.3, 0.8, 0.0] },
+      "hope":         { cluster: "emotion", vec: [0.7, 0.2, 0.3, 0.3, 0.92, 0.5, 0.8, 0.4, 0.7, 0.6, 0.2, 0.5, 0.85, 0.1, 0.5, 0.0] },
+
+      // Actions & Dynamics
+      "create":       { cluster: "action", vec: [0.7, 0.6, 0.5, 0.3, 0.7, 0.95, 0.9, 0.3, 0.7, 0.98, 0.6, 0.6, 0.7, 0.4, 0.6, 0.0] },
+      "transform":    { cluster: "action", vec: [0.5, 0.8, 0.8, 0.3, 0.5, 0.98, 0.8, 0.4, 0.8, 0.7, 0.6, 0.8, 0.6, 0.4, 0.5, 0.0] },
+      "discover":     { cluster: "action", vec: [0.7, 0.6, 0.8, 0.4, 0.8, 0.95, 0.95, 0.5, 0.8, 0.7, 0.5, 0.7, 0.8, 0.3, 0.6, 0.0] },
+      "explore":      { cluster: "action", vec: [0.8, 0.5, 0.7, 0.4, 0.8, 0.98, 0.9, 0.7, 0.8, 0.7, 0.5, 0.8, 0.6, 0.4, 0.5, 0.0] },
+      "build":        { cluster: "action", vec: [0.6, 0.7, 0.5, 0.3, 0.4, 0.98, 0.7, 0.2, 0.6, 0.8, 0.9, 0.5, 0.3, 0.8, 0.4, 0.0] },
+      "accelerate":   { cluster: "action", vec: [0.3, 0.8, 0.85, 0.2, 0.4, 0.98, 0.6, 0.2, 0.7, 0.4, 0.6, 0.98, 0.5, 0.3, 0.3, 0.0] },
+      "connect":      { cluster: "action", vec: [0.6, 0.85, 0.6, 0.3, 0.6, 0.9, 0.8, 0.4, 0.6, 0.6, 0.7, 0.6, 0.5, 0.4, 0.7, 0.0] },
+      "evolve":       { cluster: "action", vec: [0.9, 0.6, 0.85, 0.3, 0.6, 0.95, 0.8, 0.8, 0.8, 0.6, 0.4, 0.5, 0.6, 0.5, 0.4, 0.0] },
+
+      // Tools & Artifacts
+      "compass":      { cluster: "tools", vec: [0.2, 0.4, 0.8, 0.3, 0.3, 0.5, 0.7, 0.6, 0.4, 0.5, 0.95, 0.4, 0.4, 0.9, 0.3, 0.0] },
+      "telescope":    { cluster: "tools", vec: [0.2, 0.7, 0.95, 0.3, 0.5, 0.5, 0.8, 0.5, 0.9, 0.6, 0.98, 0.3, 0.7, 0.95, 0.3, 0.0] },
+      "microscope":   { cluster: "tools", vec: [0.3, 0.7, 0.98, 0.2, 0.4, 0.5, 0.8, 0.4, -0.7, 0.5, 0.98, 0.3, 0.6, 0.95, 0.3, 0.0] },
+      "satellite":    { cluster: "tools", vec: [0.1, 0.95, 0.9, 0.3, 0.2, 0.6, 0.7, 0.3, 0.8, 0.5, 0.95, 0.8, 0.6, 0.9, 0.4, 0.0] },
+      "engine":       { cluster: "tools", vec: [0.2, 0.85, 0.7, 0.2, 0.3, 0.9, 0.5, 0.2, 0.7, 0.5, 0.98, 0.8, 0.4, 0.95, 0.2, 0.0] },
+      "beacon":       { cluster: "tools", vec: [0.3, 0.6, 0.6, 0.4, 0.6, 0.4, 0.6, 0.5, 0.7, 0.5, 0.9, 0.5, 0.98, 0.8, 0.4, 0.0] },
+      "prism":        { cluster: "tools", vec: [0.1, 0.5, 0.95, 0.2, 0.5, 0.3, 0.7, 0.3, 0.4, 0.8, 0.92, 0.6, 0.98, 0.95, 0.3, 0.0] },
+      "matrix":       { cluster: "tools", vec: [0.1, 0.95, 0.9, 0.2, 0.2, 0.4, 0.9, 0.2, 0.7, 0.6, 0.8, 0.5, 0.4, 0.4, 0.7, 0.0] }
+    };
+
+    // Normalize all vectors in the curated database
+    for (const word in CURATED_VOCAB_DB) {
+      const v = CURATED_VOCAB_DB[word].vec;
+      const norm = vectorNorm(v);
+      if (norm > 0) {
+        for (let i = 0; i < v.length; i++) v[i] /= norm;
+      }
+    }
+
+    // Dynamic OOV Word Vector Generator
+    // Combines FastText-style character n-gram hashing + morphological root matching + contextual co-occurrence
+    function getWordEmbedding(rawWord, contextWords = []) {
+      const word = rawWord.toLowerCase().replace(/[^a-z0-9]/g, '');
+      if (!word) return new Array(16).fill(0.01);
+
+      // 1. Direct curated match
+      if (CURATED_VOCAB_DB[word]) {
+        return [...CURATED_VOCAB_DB[word].vec];
+      }
+
+      // 2. Check for subword morphological roots in curated dictionary
+      for (const known in CURATED_VOCAB_DB) {
+        if (word.startsWith(known) || word.endsWith(known) || (known.length >= 4 && word.includes(known))) {
+          const vec = [...CURATED_VOCAB_DB[known].vec];
+          // Perturb slightly with stable string hash for uniqueness
+          let hash = 0;
+          for (let i = 0; i < word.length; i++) hash = ((hash << 5) - hash) + word.charCodeAt(i);
+          for (let i = 0; i < 16; i++) {
+            const pert = Math.sin(hash + i) * 0.12;
+            vec[i] = Math.max(0, vec[i] + pert);
+          }
+          const norm = vectorNorm(vec);
+          return vec.map(v => v / (norm || 1));
+        }
+      }
+
+      // 3. Deterministic character n-gram pseudo-embedding
+      const vec = new Array(16).fill(0);
+      let hash = 5381;
+      for (let i = 0; i < word.length; i++) {
+        hash = ((hash << 5) + hash) + word.charCodeAt(i);
+        const dim = Math.abs(hash) % 16;
+        vec[dim] += 1.0;
+      }
+      for (let i = 0; i < word.length - 2; i++) {
+        const trigram = word.substring(i, i + 3);
+        let triHash = 0;
+        for (let j = 0; j < 3; j++) triHash = (triHash * 31) + trigram.charCodeAt(j);
+        const dim = Math.abs(triHash) % 16;
+        vec[dim] += 1.5;
+      }
+
+      // Morphological heuristics
+      if (word.endsWith("ing") || word.endsWith("ed") || word.endsWith("ize")) vec[5] += 2.0; // Action
+      if (word.endsWith("tion") || word.endsWith("ism") || word.endsWith("ity")) vec[6] += 2.0; // Cognition
+      if (word.startsWith("neuro") || word.startsWith("cyber") || word.endsWith("net") || word.endsWith("bot")) vec[1] += 3.0; // Tech
+      if (word.endsWith("ic") || word.endsWith("al") || word.endsWith("ous")) vec[2] += 1.5; // Science
+
+      // 4. Incorporate context if available (Skip-gram intuition)
+      if (contextWords && contextWords.length > 0) {
+        for (const ctx of contextWords) {
+          const cleanCtx = ctx.toLowerCase().replace(/[^a-z0-9]/g, '');
+          if (cleanCtx !== word && CURATED_VOCAB_DB[cleanCtx]) {
+            const ctxVec = CURATED_VOCAB_DB[cleanCtx].vec;
+            for (let i = 0; i < 16; i++) {
+              vec[i] += ctxVec[i] * 0.45;
+            }
+          }
+        }
+      }
+
+      // Normalize
+      const norm = vectorNorm(vec);
+      return vec.map(v => v / (norm || 1));
+    }
+
+    // Determine semantic cluster category for an OOV word based on max similarity
+    function inferClusterForVector(vec) {
+      let bestCluster = "tools";
+      let maxScore = -1;
+      for (const [clusterKey, meta] of Object.entries(SEMANTIC_CLUSTERS)) {
+        // Average vector of cluster
+        const clusterWords = Object.entries(CURATED_VOCAB_DB).filter(([_, val]) => val.cluster === clusterKey);
+        if (clusterWords.length === 0) continue;
+        const avgVec = new Array(16).fill(0);
+        for (const [_, item] of clusterWords) {
+          for (let i = 0; i < 16; i++) avgVec[i] += item.vec[i];
+        }
+        for (let i = 0; i < 16; i++) avgVec[i] /= clusterWords.length;
+        const sim = cosineSimilarity(vec, avgVec);
+        if (sim > maxScore) {
+          maxScore = sim;
+          bestCluster = clusterKey;
+        }
+      }
+      return bestCluster;
+    }
+    /* ==========================================================================
+       3. SECTION 1: VOCABULARY BUILDER ENGINE
+       ========================================================================== */
+
+    let currentVocabData = {
+      rawSentence: "",
+      tokensList: [],
+      vocabMap: new Map(), // word -> { id, freq, length, positions: [], isRepeated }
+      activeHighlightWord: null
+    };
+
+    function setVocabInput(text) {
+      document.getElementById('vocab-input-text').value = text;
+      buildVocabulary();
+    }
+
+    function loadVocabSample() {
+      const samples = [
+        "Natural language processing enables computers to comprehend human language and generate meaningful text.",
+        "The quick brown fox jumps over the lazy dog while another brown fox watches.",
+        "Deep neural networks discover structured patterns in high dimensional vector spaces repeatedly.",
+        "To be or not to be that is the question whether tis nobler in the mind."
+      ];
+      const randomSample = samples[Math.floor(Math.random() * samples.length)];
+      setVocabInput(randomSample);
+    }
+
+    function resetVocabSection() {
+      document.getElementById('vocab-input-text').value = "";
+      document.getElementById('vocab-sentence-display').innerHTML = "";
+      document.getElementById('vocab-cards-grid').innerHTML = "";
+      document.getElementById('vocab-table-body').innerHTML = "";
+      document.getElementById('vocab-stat-size').textContent = "0";
+      document.getElementById('vocab-stat-total').textContent = "0";
+      document.getElementById('vocab-stat-unique').textContent = "0";
+      document.getElementById('vocab-stat-repeated').textContent = "0";
+      document.getElementById('vocab-stat-ttr').textContent = "0%";
+      document.getElementById('vocab-active-highlight-label').textContent = "";
+      Plotly.purge('vocab-growth-chart');
+      showToast("Vocabulary builder reset.");
+    }
+
+    function buildVocabulary() {
+      const text = document.getElementById('vocab-input-text').value.trim();
+      if (!text) {
+        showToast("Please enter a sentence to analyze!");
+        return;
+      }
+
+      currentVocabData.rawSentence = text;
+      currentVocabData.activeHighlightWord = null;
+      document.getElementById('vocab-active-highlight-label').textContent = "";
+
+      // Regex split into words while preserving punctuation
+      const regex = /([a-zA-Z0-9]+|[^\s\w])/g;
+      const rawMatches = [];
+      let match;
+      while ((match = regex.exec(text)) !== null) {
+        rawMatches.push({ text: match[0], index: match.index });
+      }
+
+      const vocabMap = new Map();
+      const tokensList = [];
+      let nextId = 101; // Educational standard starting ID
+
+      rawMatches.forEach((m, posIndex) => {
+        const normalized = m.text.toLowerCase();
+        tokensList.push({ raw: m.text, norm: normalized, pos: posIndex + 1 });
+
+        if (!vocabMap.has(normalized)) {
+          vocabMap.set(normalized, {
+            word: normalized,
+            rawSample: m.text,
+            id: nextId++,
+            freq: 1,
+            length: m.text.length,
+            positions: [posIndex + 1],
+            isNew: true
+          });
+        } else {
+          const entry = vocabMap.get(normalized);
+          entry.freq += 1;
+          entry.positions.push(posIndex + 1);
+          entry.isNew = false;
+        }
+      });
+
+      currentVocabData.tokensList = tokensList;
+      currentVocabData.vocabMap = vocabMap;
+
+      // Update Metric Cards
+      const totalWords = tokensList.length;
+      const vocabSize = vocabMap.size;
+      let uniqueCount = 0;
+      let repeatedCount = 0;
+      for (const entry of vocabMap.values()) {
+        if (entry.freq === 1) uniqueCount++;
+        else repeatedCount++;
+      }
+      const ttr = totalWords > 0 ? ((vocabSize / totalWords) * 100).toFixed(1) : 0;
+
+      document.getElementById('vocab-stat-size').textContent = vocabSize;
+      document.getElementById('vocab-stat-total').textContent = totalWords;
+      document.getElementById('vocab-stat-unique').textContent = uniqueCount;
+      document.getElementById('vocab-stat-repeated').textContent = repeatedCount;
+      document.getElementById('vocab-stat-ttr').textContent = ttr + "%";
+
+      // Render Interactive Sentence
+      renderInteractiveVocabSentence();
+
+      // Render Cards & Table
+      sortAndRenderVocab();
+
+      // Render Heaps' Law Growth Chart
+      renderVocabGrowthChart(tokensList);
+
+      showToast(`Extracted ${vocabSize} unique vocabulary entries from ${totalWords} tokens!`);
+    }
+
+    function renderInteractiveVocabSentence() {
+      const container = document.getElementById('vocab-sentence-display');
+      container.innerHTML = "";
+
+      currentVocabData.tokensList.forEach(t => {
+        const span = document.createElement('span');
+        span.className = "word-token-span";
+        span.textContent = t.raw;
+        span.dataset.norm = t.norm;
+
+        span.onclick = () => highlightVocabWord(t.norm);
+        container.appendChild(span);
+        container.appendChild(document.createTextNode(" "));
+      });
+    }
+
+    function highlightVocabWord(normWord) {
+      currentVocabData.activeHighlightWord = (currentVocabData.activeHighlightWord === normWord) ? null : normWord;
+
+      // Update spans in sentence
+      const spans = document.querySelectorAll('#vocab-sentence-display .word-token-span');
+      spans.forEach(span => {
+        if (currentVocabData.activeHighlightWord && span.dataset.norm === currentVocabData.activeHighlightWord) {
+          span.classList.add('highlighted');
+        } else {
+          span.classList.remove('highlighted');
+        }
+      });
+
+      // Update cards
+      const cards = document.querySelectorAll('.vocab-card');
+      cards.forEach(card => {
+        if (currentVocabData.activeHighlightWord && card.dataset.word === currentVocabData.activeHighlightWord) {
+          card.classList.add('active');
+          card.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        } else {
+          card.classList.remove('active');
+        }
+      });
+
+      // Update label
+      const label = document.getElementById('vocab-active-highlight-label');
+      if (currentVocabData.activeHighlightWord) {
+        const entry = currentVocabData.vocabMap.get(currentVocabData.activeHighlightWord);
+        label.innerHTML = `Active Spotlight: <strong style="color:#fff;">"${entry.word}"</strong> (ID: #${entry.id}, Freq: ${entry.freq}x, Pos: ${entry.positions.join(', ')})`;
+      } else {
+        label.textContent = "";
+      }
+    }
+
+    function sortAndRenderVocab() {
+      const sortMode = document.getElementById('vocab-sort-select').value;
+      const filterText = (document.getElementById('vocab-search-filter').value || "").toLowerCase().trim();
+
+      let entries = Array.from(currentVocabData.vocabMap.values());
+
+      if (filterText) {
+        entries = entries.filter(e => e.word.includes(filterText) || e.id.toString().includes(filterText));
+      }
+
+      if (sortMode === "first_pos") {
+        entries.sort((a, b) => a.positions[0] - b.positions[0]);
+      } else if (sortMode === "freq_desc") {
+        entries.sort((a, b) => b.freq - a.freq || a.positions[0] - b.positions[0]);
+      } else if (sortMode === "alpha_asc") {
+        entries.sort((a, b) => a.word.localeCompare(b.word));
+      } else if (sortMode === "len_desc") {
+        entries.sort((a, b) => b.length - a.length);
+      }
+
+      // Render Cards
+      const grid = document.getElementById('vocab-cards-grid');
+      grid.innerHTML = "";
+
+      if (entries.length === 0) {
+        grid.innerHTML = `<div style="grid-column: 1/-1; text-align: center; color: var(--text-dim); padding: 2rem;">No vocabulary entries match filter.</div>`;
+      }
+
+      entries.forEach(entry => {
+        const card = document.createElement('div');
+        card.className = "vocab-card";
+        card.dataset.word = entry.word;
+        if (currentVocabData.activeHighlightWord === entry.word) card.classList.add('active');
+
+        const isRep = entry.freq > 1;
+        card.innerHTML = `
+          <div class="vocab-card-top">
+            <span class="token-id-badge">ID #${entry.id}</span>
+            <span class="status-badge ${isRep ? 'repeated' : 'new'}">${isRep ? `🔁 ${entry.freq}x Repeated` : '✨ Unique'}</span>
+          </div>
+          <div class="vocab-card-word">${entry.word}</div>
+          <div class="vocab-meta-row">
+            <div class="vocab-stat-item"><i class="fa-solid fa-ruler-horizontal"></i> Len: <strong>${entry.length}</strong></div>
+            <div class="vocab-stat-item"><i class="fa-solid fa-hashtag"></i> Freq: <strong>${entry.freq}</strong></div>
+            <div class="vocab-stat-item"><i class="fa-solid fa-location-dot"></i> Pos: <strong>${entry.positions.join(', ')}</strong></div>
+          </div>
+        `;
+
+        card.onclick = () => highlightVocabWord(entry.word);
+        grid.appendChild(card);
+      });
+
+      // Render Table
+      const tbody = document.getElementById('vocab-table-body');
+      tbody.innerHTML = "";
+      entries.forEach(entry => {
+        const tr = document.createElement('tr');
+        const isRep = entry.freq > 1;
+        tr.innerHTML = `
+          <td style="font-family: var(--font-mono); color: var(--accent-cyan);">#${entry.id}</td>
+          <td style="font-weight: 700; color: #fff;">${entry.word}</td>
+          <td><span style="font-family: var(--font-mono); font-weight: 700; color: ${isRep ? 'var(--accent-amber)' : 'var(--accent-emerald)'};">${entry.freq}</span></td>
+          <td>${entry.length} chars</td>
+          <td style="font-family: var(--font-mono); font-size: 0.8rem;">[${entry.positions.join(', ')}]</td>
+          <td><span class="status-badge ${isRep ? 'repeated' : 'new'}">${isRep ? 'Repeated' : 'New'}</span></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function filterVocabCards() {
+      sortAndRenderVocab();
+    }
+
+    function switchVocabTab(tab) {
+      document.querySelectorAll('#sec-vocab .tab-pill-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('#sec-vocab .chart-panel-view').forEach(p => p.classList.remove('active'));
+
+      if (tab === 'table') {
+        document.querySelector('#sec-vocab .tab-pill-btn:nth-child(1)').classList.add('active');
+        document.getElementById('vocab-tab-table').classList.add('active');
+      } else {
+        document.querySelector('#sec-vocab .tab-pill-btn:nth-child(2)').classList.add('active');
+        document.getElementById('vocab-tab-growth').classList.add('active');
+        Plotly.Plots.resize('vocab-growth-chart');
+      }
+    }
+
+    function renderVocabGrowthChart(tokensList) {
+      const seen = new Set();
+      const xTokens = [];
+      const yUniqueVocab = [];
+
+      tokensList.forEach((t, idx) => {
+        seen.add(t.norm);
+        xTokens.push(idx + 1);
+        yUniqueVocab.push(seen.size);
+      });
+
+      const traceActual = {
+        x: xTokens,
+        y: yUniqueVocab,
+        mode: 'lines+markers',
+        name: 'Observed Vocab Size',
+        line: { color: '#00f5ff', width: 3, shape: 'hv' },
+        marker: { size: 6, color: '#00f5ff' }
+      };
+
+      // Heaps' Law theoretical fit V(N) = k * N^beta
+      const k = 1.2;
+      const beta = 0.72;
+      const yHeaps = xTokens.map(n => Math.round(k * Math.pow(n, beta)));
+
+      const traceHeaps = {
+        x: xTokens,
+        y: yHeaps,
+        mode: 'lines',
+        name: "Heaps' Law Curve V(N)=k·N^β",
+        line: { color: '#a855f7', width: 2, dash: 'dash' }
+      };
+
+      const layout = {
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        font: { family: 'Inter, sans-serif', color: '#94a3b8' },
+        margin: { l: 50, r: 30, t: 30, b: 50 },
+        xaxis: {
+          title: 'Tokens Processed (Sequence Length N)',
+          gridcolor: 'rgba(255, 255, 255, 0.06)',
+          zerolinecolor: 'rgba(255, 255, 255, 0.1)'
+        },
+        yaxis: {
+          title: 'Cumulative Unique Vocabulary |V|',
+          gridcolor: 'rgba(255, 255, 255, 0.06)',
+          zerolinecolor: 'rgba(255, 255, 255, 0.1)'
+        },
+        legend: {
+          orientation: 'h',
+          y: 1.15,
+          font: { size: 11, color: '#e2e8f0' }
+        }
+      };
+
+      Plotly.newPlot('vocab-growth-chart', [traceActual, traceHeaps], layout, { responsive: true, displayModeBar: false });
+    }
+
+    function copyVocabJSON() {
+      if (currentVocabData.vocabMap.size === 0) {
+        showToast("Build vocabulary first before copying!");
+        return;
+      }
+      const obj = {};
+      currentVocabData.vocabMap.forEach((val, key) => {
+        obj[key] = { id: val.id, freq: val.freq, length: val.length, positions: val.positions };
+      });
+      navigator.clipboard.writeText(JSON.stringify(obj, null, 2)).then(() => {
+        showToast("Vocabulary JSON copied to clipboard!");
+      });
+    }
+
+    function copyVocabList() {
+      if (currentVocabData.vocabMap.size === 0) {
+        showToast("Build vocabulary first before copying!");
+        return;
+      }
+      const words = Array.from(currentVocabData.vocabMap.keys()).join(", ");
+      navigator.clipboard.writeText(words).then(() => {
+        showToast("Vocabulary words list copied!");
+      });
+    }
+
+    /* ==========================================================================
+       4. SECTION 2: TOKEN CREATION & PIPELINE ENGINE
+       ========================================================================== */
+
+    let currentTokenPipelineData = {
+      tokens: [],
+      selectedTokenIndex: null
+    };
+
+    function setTokenInput(text) {
+      document.getElementById('token-input-text').value = text;
+      generateTokensPipeline();
+    }
+
+    function loadTokenSample() {
+      const samples = [
+        "Artificial intelligence models convert text into high-dimensional numerical vectors.",
+        "Tokens are the discrete atomic units of modern natural language processing.",
+        "Attention mechanisms in transformer architectures dynamically weight contextual relationships."
+      ];
+      setTokenInput(samples[Math.floor(Math.random() * samples.length)]);
+    }
+
+    function resetTokenSection() {
+      document.getElementById('token-input-text').value = "";
+      document.getElementById('pipe-step1-raw').textContent = "";
+      document.getElementById('pipe-step2-norm').textContent = "";
+      document.getElementById('pipe-step3-blocks').innerHTML = "";
+      document.getElementById('pipe-step4-lookup').innerHTML = "";
+      document.getElementById('pipe-step5-sequence').textContent = "[ ... ]";
+      document.getElementById('inspect-token-str').textContent = "None selected";
+      document.getElementById('inspect-token-id').textContent = "-";
+      document.getElementById('inspect-token-pos').textContent = "-";
+      document.getElementById('inspect-token-span').textContent = "-";
+      document.getElementById('inspect-token-len').textContent = "-";
+      showToast("Token creation section reset.");
+    }
+
+    function generateTokensPipeline() {
+      const rawText = document.getElementById('token-input-text').value.trim();
+      if (!rawText) {
+        showToast("Please enter text to tokenize!");
+        return;
+      }
+
+      const optLower = document.getElementById('token-opt-lowercase').checked;
+      const optPunct = document.getElementById('token-opt-punct').checked;
+      const optSpecial = document.getElementById('token-opt-special').checked;
+
+      // Step 1: Raw
+      document.getElementById('pipe-step1-raw').textContent = rawText;
+
+      // Step 2: Normalization
+      let normalized = rawText.normalize('NFKC').replace(/\s+/g, ' ');
+      if (optLower) normalized = normalized.toLowerCase();
+      document.getElementById('pipe-step2-norm').textContent = normalized;
+
+      // Step 3: Splitting into tokens
+      let regexPattern = optPunct ? /([a-zA-Z0-9]+|[^\s\w])/g : /([^\s]+)/g;
+      const tokens = [];
+      let m;
+      let pos = 1;
+
+      if (optSpecial) {
+        tokens.push({
+          text: "[BOS]",
+          raw: "[BOS]",
+          id: 101,
+          pos: pos++,
+          start: 0,
+          end: 0,
+          isSpecial: true
+        });
+      }
+
+      while ((m = regexPattern.exec(rawText)) !== null) {
+        const tokenStr = optLower ? m[0].toLowerCase() : m[0];
+        // Generate stable deterministic Token ID based on hash
+        let hash = 0;
+        for (let i = 0; i < tokenStr.length; i++) {
+          hash = ((hash << 5) - hash) + tokenStr.charCodeAt(i);
+        }
+        const tokenId = 1000 + (Math.abs(hash) % 8999);
+
+        tokens.push({
+          text: tokenStr,
+          raw: m[0],
+          id: tokenId,
+          pos: pos++,
+          start: m.index,
+          end: m.index + m[0].length,
+          isSpecial: false
+        });
+      }
+
+      if (optSpecial) {
+        tokens.push({
+          text: "[EOS]",
+          raw: "[EOS]",
+          id: 102,
+          pos: pos++,
+          start: rawText.length,
+          end: rawText.length,
+          isSpecial: true
+        });
+      }
+
+      currentTokenPipelineData.tokens = tokens;
+
+      // Render Step 3: Token blocks
+      const step3Container = document.getElementById('pipe-step3-blocks');
+      step3Container.innerHTML = "";
+      tokens.forEach((t, idx) => {
+        const block = document.createElement('div');
+        block.className = "token-block-item";
+        block.dataset.index = idx;
+        block.innerHTML = `
+          <span class="token-str">${t.text}</span>
+          <span class="token-sub-id">ID: #${t.id}</span>
+          <span style="font-size: 0.65rem; color: var(--text-dim);">pos ${t.pos}</span>
+        `;
+        block.onclick = () => selectTokenBlock(idx);
+        step3Container.appendChild(block);
+      });
+
+      // Render Step 4: Lookup Table chips
+      const step4Container = document.getElementById('pipe-step4-lookup');
+      step4Container.innerHTML = "";
+      tokens.forEach(t => {
+        const chip = document.createElement('span');
+        chip.className = "preset-btn";
+        chip.style.fontFamily = "var(--font-mono)";
+        chip.innerHTML = `"${t.text}" &rarr; <strong style="color: var(--accent-cyan);">${t.id}</strong>`;
+        step4Container.appendChild(chip);
+      });
+
+      // Render Step 5: Final sequence tensor
+      const idArray = tokens.map(t => t.id);
+      document.getElementById('pipe-step5-sequence').textContent = `[ ${idArray.join(', ')} ]`;
+
+      // Select first token by default
+      if (tokens.length > 0) selectTokenBlock(0);
+
+      showToast(`Generated ${tokens.length} tokens into tensor sequence!`);
+    }
+
+    function selectTokenBlock(index) {
+      currentTokenPipelineData.selectedTokenIndex = index;
+      const token = currentTokenPipelineData.tokens[index];
+      if (!token) return;
+
+      // Update block highlight
+      const blocks = document.querySelectorAll('#pipe-step3-blocks .token-block-item');
+      blocks.forEach((b, i) => {
+        if (i === index) b.classList.add('highlighted');
+        else b.classList.remove('highlighted');
+      });
+
+      // Update inspector card
+      document.getElementById('inspect-token-str').textContent = `"${token.text}"`;
+      document.getElementById('inspect-token-id').textContent = `#${token.id}`;
+      document.getElementById('inspect-token-pos').textContent = `Index ${token.pos} / ${currentTokenPipelineData.tokens.length}`;
+      document.getElementById('inspect-token-span').textContent = `[${token.start}:${token.end}]`;
+      document.getElementById('inspect-token-len').textContent = `${token.raw.length} chars`;
+    }
+
+    function copyTokenIDs() {
+      if (currentTokenPipelineData.tokens.length === 0) {
+        showToast("Generate tokens first before copying!");
+        return;
+      }
+      const ids = currentTokenPipelineData.tokens.map(t => t.id);
+      navigator.clipboard.writeText(`[${ids.join(', ')}]`).then(() => {
+        showToast("Token IDs sequence copied to clipboard!");
+      });
+    }
+
+    /* ==========================================================================
+       5. SECTION 3: SENTENCE SIMILARITY COMPARISON ENGINE
+       ========================================================================== */
+
+    function setSentencePair(textA, textB) {
+      document.getElementById('sim-input-a').value = textA;
+      document.getElementById('sim-input-b').value = textB;
+      compareSentences();
+    }
+
+    function loadSimPair(type) {
+      if (type === 'paraphrase') {
+        setSentencePair(
+          "Artificial intelligence models discover structured patterns in high dimensional data.",
+          "Machine learning algorithms extract complex representations from large datasets."
+        );
+      } else if (type === 'overlap') {
+        setSentencePair(
+          "The quick brown fox jumps over the sleeping dog in the green meadow.",
+          "The fast brown fox leaped over the sleeping dog in the sunny meadow."
+        );
+      } else if (type === 'different') {
+        setSentencePair(
+          "Astronomers discover distant planetary systems with orbital space telescopes.",
+          "Italian bakers prepare artisan sourdough pizza inside wood fired ovens."
+        );
+      }
+    }
+
+    function swapSentences() {
+      const a = document.getElementById('sim-input-a').value;
+      const b = document.getElementById('sim-input-b').value;
+      document.getElementById('sim-input-a').value = b;
+      document.getElementById('sim-input-b').value = a;
+      compareSentences();
+      showToast("Sentences swapped!");
+    }
+
+    function resetSimSection() {
+      document.getElementById('sim-input-a').value = "";
+      document.getElementById('sim-input-b').value = "";
+      document.getElementById('gauge-cosine-val').textContent = "0%";
+      document.getElementById('radial-gauge-bar').style.strokeDashoffset = "565";
+      document.getElementById('sim-stat-jaccard').textContent = "0%";
+      document.getElementById('sim-stat-shared').textContent = "0";
+      document.getElementById('sim-stat-unique-a').textContent = "0";
+      document.getElementById('sim-stat-unique-b').textContent = "0";
+      document.getElementById('venn-chips-a').innerHTML = "";
+      document.getElementById('venn-chips-shared').innerHTML = "";
+      document.getElementById('venn-chips-b').innerHTML = "";
+      document.getElementById('closest-pairs-list').innerHTML = "";
+      showToast("Sentence similarity section reset.");
+    }
+
+    function compareSentences() {
+      const textA = document.getElementById('sim-input-a').value.trim();
+      const textB = document.getElementById('sim-input-b').value.trim();
+
+      if (!textA || !textB) {
+        showToast("Please enter both Sentence A and Sentence B!");
+        return;
+      }
+
+      // Tokenize both sentences
+      const extractWords = (str) => {
+        const matches = str.toLowerCase().match(/[a-zA-Z0-9]+/g);
+        return matches || [];
+      };
+
+      const wordsA = extractWords(textA);
+      const wordsB = extractWords(textB);
+
+      document.getElementById('sim-len-a').textContent = `${wordsA.length} words`;
+      document.getElementById('sim-len-b').textContent = `${wordsB.length} words`;
+
+      const setA = new Set(wordsA);
+      const setB = new Set(wordsB);
+
+      // Jaccard Similarity
+      const jaccardScore = jaccardSimilarity(setA, setB);
+
+      // Set Intersections
+      const sharedWords = [];
+      const onlyA = [];
+      const onlyB = [];
+
+      for (const w of setA) {
+        if (setB.has(w)) sharedWords.push(w);
+        else onlyA.push(w);
+      }
+      for (const w of setB) {
+        if (!setA.has(w)) onlyB.push(w);
+      }
+
+      // Sentence Vector Embedding Synthesis (Average pooling of word embeddings)
+      const getSentenceVector = (words) => {
+        const sVec = new Array(16).fill(0);
+        if (words.length === 0) return sVec;
+        words.forEach(w => {
+          const wVec = getWordEmbedding(w, words);
+          for (let i = 0; i < 16; i++) sVec[i] += wVec[i];
+        });
+        const norm = vectorNorm(sVec);
+        return norm > 0 ? sVec.map(v => v / norm) : sVec;
+      };
+
+      const vecA = getSentenceVector(wordsA);
+      const vecB = getSentenceVector(wordsB);
+      const cosineScore = Math.max(0, cosineSimilarity(vecA, vecB));
+
+      // Update Animated Gauge
+      const cosinePct = Math.round(cosineScore * 100);
+      const gaugeBar = document.getElementById('radial-gauge-bar');
+      const maxOffset = 565; // Circumference = 2 * PI * 90 ≈ 565.48
+      const targetOffset = maxOffset - (maxOffset * (cosinePct / 100));
+      gaugeBar.style.strokeDashoffset = targetOffset;
+      document.getElementById('gauge-cosine-val').textContent = `${cosinePct}%`;
+
+      // Status Badge
+      const badge = document.getElementById('gauge-status-badge');
+      if (cosinePct >= 75) {
+        badge.textContent = "High Semantic Match";
+        badge.style.background = "rgba(16, 185, 129, 0.2)";
+        badge.style.color = "var(--accent-emerald)";
+      } else if (cosinePct >= 45) {
+        badge.textContent = "Moderate Similarity";
+        badge.style.background = "rgba(0, 245, 255, 0.2)";
+        badge.style.color = "var(--accent-cyan)";
+      } else {
+        badge.textContent = "Low Overlap / Different";
+        badge.style.background = "rgba(244, 63, 94, 0.2)";
+        badge.style.color = "var(--accent-rose)";
+      }
+
+      // Update Metric Cards
+      document.getElementById('sim-stat-jaccard').textContent = `${Math.round(jaccardScore * 100)}%`;
+      document.getElementById('sim-stat-shared').textContent = sharedWords.length;
+      document.getElementById('sim-stat-unique-a').textContent = onlyA.length;
+      document.getElementById('sim-stat-unique-b').textContent = onlyB.length;
+
+      // Update 3-Column Breakdown
+      document.getElementById('venn-count-a').textContent = onlyA.length;
+      document.getElementById('venn-count-shared').textContent = sharedWords.length;
+      document.getElementById('venn-count-b').textContent = onlyB.length;
+
+      const renderChips = (containerId, list, isShared = false) => {
+        const c = document.getElementById(containerId);
+        c.innerHTML = "";
+        if (list.length === 0) {
+          c.innerHTML = `<span style="font-size: 0.72rem; color: var(--text-dim); padding: 0.25rem;">(none)</span>`;
+          return;
+        }
+        list.forEach(w => {
+          const chip = document.createElement('span');
+          chip.className = `venn-chip ${isShared ? 'shared' : ''}`;
+          chip.textContent = w;
+          c.appendChild(chip);
+        });
+      };
+
+      renderChips('venn-chips-a', onlyA, false);
+      renderChips('venn-chips-shared', sharedWords, true);
+      renderChips('venn-chips-b', onlyB, false);
+
+      // Closest-Pair Vector Analysis
+      // Cross-compare each word in A with each word in B
+      const pairList = [];
+      const checkedPairs = new Set();
+
+      for (const wa of setA) {
+        const va = getWordEmbedding(wa, wordsA);
+        let bestMatch = null;
+        let bestSim = -2;
+
+        for (const wb of setB) {
+          const vb = getWordEmbedding(wb, wordsB);
+          const sim = cosineSimilarity(va, vb);
+          if (sim > bestSim) {
+            bestSim = sim;
+            bestMatch = wb;
+          }
+        }
+
+        if (bestMatch) {
+          const key = [wa, bestMatch].sort().join("<->");
+          if (!checkedPairs.has(key)) {
+            checkedPairs.add(key);
+            pairList.push({
+              wordA: wa,
+              wordB: bestMatch,
+              similarity: bestSim,
+              isExact: wa === bestMatch
+            });
+          }
+        }
+      }
+
+      pairList.sort((p1, p2) => p2.similarity - p1.similarity);
+
+      // Render Closest-Pairs
+      const pairsContainer = document.getElementById('closest-pairs-list');
+      pairsContainer.innerHTML = "";
+
+      pairList.slice(0, 10).forEach(pair => {
+        const pct = Math.max(0, Math.min(100, Math.round(pair.similarity * 100)));
+        const row = document.createElement('div');
+        row.className = "pair-row";
+        row.innerHTML = `
+          <div class="pair-word-badge" style="color: var(--accent-blue);">${pair.wordA}</div>
+          <div style="text-align: center; color: var(--text-dim);"><i class="fa-solid fa-arrows-left-right"></i></div>
+          <div class="pair-word-badge" style="color: var(--accent-purple);">${pair.wordB}</div>
+          <div class="pair-bar-outer">
+            <div class="pair-bar-inner" style="width: ${pct}%;"></div>
+          </div>
+          <div class="pair-score-tag">
+            ${pct}%
+            ${pair.isExact ? '<span style="font-size: 0.65rem; color: var(--accent-emerald); display: block;">Exact</span>' : ''}
+          </div>
+        `;
+        pairsContainer.appendChild(row);
+      });
+
+      showToast(`Comparison complete: Cosine Sim ${cosinePct}%, Jaccard ${Math.round(jaccardScore * 100)}%`);
+    }
+
+    function copySimReport() {
+      const cos = document.getElementById('gauge-cosine-val').textContent;
+      const jac = document.getElementById('sim-stat-jaccard').textContent;
+      const shared = document.getElementById('sim-stat-shared').textContent;
+      const report = `Sentence Similarity Report:\nCosine Similarity: ${cos}\nJaccard Similarity: ${jac}\nShared Words: ${shared}\nSentence A: ${document.getElementById('sim-input-a').value}\nSentence B: ${document.getElementById('sim-input-b').value}`;
+      navigator.clipboard.writeText(report).then(() => {
+        showToast("Similarity report copied to clipboard!");
+      });
+    }
+    /* ==========================================================================
+       6. SECTION 4: THREE.JS 3D INTERACTIVE EMBEDDING SPACE
+       ========================================================================== */
+
+    let threeScene, threeCamera, threeRenderer, threeControls;
+    let threeNodes = []; // Array of { word, cluster, vec, x, y, z, mesh, sprite, isCustom }
+    let threeLinesGroup = null;
+    let threeGridHelper = null;
+    let threeAxesGroup = null;
+    let threeParticles = null;
+    let threeRaycaster, threeMouse;
+    let isAutoRotating = true;
+    let showLabels = true;
+    let showLines = true;
+    let showGrid = true;
+    let selected3DNode = null;
+
+    // Current active 3D vocabulary
+    let active3DVocabWords = Object.keys(CURATED_VOCAB_DB);
+
+    function initThreeJS() {
+      const container = document.querySelector('.three-box-wrapper');
+      const canvas = document.getElementById('three-canvas');
+      const width = container.clientWidth || 1000;
+      const height = container.clientHeight || 650;
+
+      // Scene
+      threeScene = new THREE.Scene();
+      threeScene.background = new THREE.Color(0x060913);
+      threeScene.fog = new THREE.FogExp2(0x060913, 0.007);
+
+      // Camera
+      threeCamera = new THREE.PerspectiveCamera(50, width / height, 0.1, 1000);
+      threeCamera.position.set(0, 25, 65);
+
+      // Renderer
+      threeRenderer = new THREE.WebGLRenderer({ canvas: canvas, antialias: true, alpha: false });
+      threeRenderer.setSize(width, height);
+      threeRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+      // OrbitControls
+      threeControls = new THREE.OrbitControls(threeCamera, threeRenderer.domElement);
+      threeControls.enableDamping = true;
+      threeControls.dampingFactor = 0.05;
+      threeControls.maxDistance = 180;
+      threeControls.minDistance = 10;
+      threeControls.autoRotate = isAutoRotating;
+      threeControls.autoRotateSpeed = 0.8;
+
+      // Lights
+      const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+      threeScene.add(ambientLight);
+
+      const dirLight1 = new THREE.DirectionalLight(0x00f5ff, 0.9);
+      dirLight1.position.set(30, 40, 30);
+      threeScene.add(dirLight1);
+
+      const dirLight2 = new THREE.DirectionalLight(0xa855f7, 0.8);
+      dirLight2.position.set(-30, -20, -30);
+      threeScene.add(dirLight2);
+
+      // Grid Helper
+      threeGridHelper = new THREE.GridHelper(90, 45, 0x1e293b, 0x0f172a);
+      threeGridHelper.position.y = -22;
+      threeScene.add(threeGridHelper);
+
+      // Coordinate Axes with Text Labels
+      threeAxesGroup = createLabeledAxes(35);
+      threeAxesGroup.position.set(-35, -22, -35);
+      threeScene.add(threeAxesGroup);
+
+      // Ambient Particle Field (Cosmic dust)
+      createParticleField();
+
+      // Lines Group
+      threeLinesGroup = new THREE.Group();
+      threeScene.add(threeLinesGroup);
+
+      // Raycasting
+      threeRaycaster = new THREE.Raycaster();
+      threeMouse = new THREE.Vector2(-999, -999);
+
+      canvas.addEventListener('mousemove', onThreeMouseMove);
+      canvas.addEventListener('click', onThreeClick);
+
+      // Populate Scene with PCA Project Data
+      rebuild3DScene();
+
+      // Start Animation Loop
+      animateThree();
+
+      // Resize observer
+      window.addEventListener('resize', onThreeResize);
+    }
+
+    function createParticleField() {
+      const pCount = 600;
+      const geom = new THREE.BufferGeometry();
+      const positions = new Float32Array(pCount * 3);
+      for (let i = 0; i < pCount * 3; i += 3) {
+        positions[i] = (Math.random() - 0.5) * 160;
+        positions[i + 1] = (Math.random() - 0.5) * 100;
+        positions[i + 2] = (Math.random() - 0.5) * 160;
+      }
+      geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      const mat = new THREE.PointsMaterial({
+        color: 0x38bdf8,
+        size: 1.2,
+        transparent: true,
+        opacity: 0.35,
+        blending: THREE.AdditiveBlending
+      });
+      threeParticles = new THREE.Points(geom, mat);
+      threeScene.add(threeParticles);
+    }
+
+    function createLabeledAxes(size) {
+      const group = new THREE.Group();
+      const axes = new THREE.AxesHelper(size);
+      group.add(axes);
+
+      // Create text sprites for X, Y, Z
+      const makeAxisLabel = (text, color, pos) => {
+        const sprite = createTextSprite(text, color, 14, 0.4);
+        sprite.position.copy(pos);
+        return sprite;
+      };
+
+      group.add(makeAxisLabel("PC1 (X)", "#ef4444", new THREE.Vector3(size + 3, 0, 0)));
+      group.add(makeAxisLabel("PC2 (Y)", "#22c55e", new THREE.Vector3(0, size + 3, 0)));
+      group.add(makeAxisLabel("PC3 (Z)", "#3b82f6", new THREE.Vector3(0, 0, size + 3)));
+
+      return group;
+    }
+
+    // Canvas Billboard Text Sprite Generator
+    function createTextSprite(text, colorHex, fontSize = 20, scale = 0.5) {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      canvas.width = 256;
+      canvas.height = 80;
+
+      // Background rounded pill
+      ctx.fillStyle = "rgba(7, 10, 22, 0.82)";
+      ctx.strokeStyle = colorHex;
+      ctx.lineWidth = 2.5;
+
+      const x = 12, y = 14, w = 232, h = 52, r = 10;
+      ctx.beginPath();
+      ctx.moveTo(x + r, y);
+      ctx.lineTo(x + w - r, y);
+      ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+      ctx.lineTo(x + w, y + h - r);
+      ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+      ctx.lineTo(x + r, y + h);
+      ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+      ctx.lineTo(x, y + r);
+      ctx.quadraticCurveTo(x, y, x + r, y);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Text
+      ctx.fillStyle = "#ffffff";
+      ctx.font = `bold ${fontSize}px 'Space Grotesk', sans-serif`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      ctx.fillText(text, 128, 40);
+
+      const texture = new THREE.CanvasTexture(canvas);
+      texture.minFilter = THREE.LinearFilter;
+      const mat = new THREE.SpriteMaterial({ map: texture, transparent: true, depthWrite: false });
+      const sprite = new THREE.Sprite(mat);
+      sprite.scale.set(10 * scale, 3.5 * scale, 1);
+      return sprite;
+    }
+
+    // Rebuild 3D Scene using PCA Projection
+    function rebuild3DScene() {
+      // Clear old meshes
+      threeNodes.forEach(n => {
+        threeScene.remove(n.mesh);
+        if (n.sprite) threeScene.remove(n.sprite);
+        if (n.glowMesh) threeScene.remove(n.glowMesh);
+      });
+      threeNodes = [];
+      clear3DLines();
+
+      // 1. Gather all vectors for active words
+      const words = active3DVocabWords;
+      const dataMatrix = [];
+
+      words.forEach(w => {
+        let vec;
+        if (CURATED_VOCAB_DB[w]) {
+          vec = CURATED_VOCAB_DB[w].vec;
+        } else {
+          vec = getWordEmbedding(w);
+        }
+        dataMatrix.push(vec);
+      });
+
+      // 2. Perform PCA Projection to 3D
+      const projected3D = performPCA(dataMatrix, 3);
+
+      // Scale factor to map coordinates cleanly inside Three.js viewport
+      const scaleCoord = 38.0;
+
+      // 3. Create 3D Nodes
+      words.forEach((w, idx) => {
+        const rawCoords = projected3D[idx];
+        const x = rawCoords[0] * scaleCoord;
+        const y = rawCoords[1] * scaleCoord;
+        const z = rawCoords[2] * scaleCoord;
+
+        const isCurated = !!CURATED_VOCAB_DB[w];
+        const clusterKey = isCurated ? CURATED_VOCAB_DB[w].cluster : inferClusterForVector(dataMatrix[idx]);
+        const clusterMeta = SEMANTIC_CLUSTERS[clusterKey] || SEMANTIC_CLUSTERS.tools;
+
+        // Core Sphere
+        const sphereGeom = new THREE.SphereGeometry(1.2, 24, 24);
+        const sphereMat = new THREE.MeshStandardMaterial({
+          color: clusterMeta.color,
+          roughness: 0.2,
+          metalness: 0.6,
+          emissive: clusterMeta.color,
+          emissiveIntensity: 0.35
+        });
+        const mesh = new THREE.Mesh(sphereGeom, sphereMat);
+        mesh.position.set(x, y, z);
+        mesh.userData = { word: w, index: idx };
+        threeScene.add(mesh);
+
+        // Additive Glow Outer Sphere
+        const glowGeom = new THREE.SphereGeometry(1.8, 16, 16);
+        const glowMat = new THREE.MeshBasicMaterial({
+          color: clusterMeta.color,
+          transparent: true,
+          opacity: 0.22,
+          blending: THREE.AdditiveBlending
+        });
+        const glowMesh = new THREE.Mesh(glowGeom, glowMat);
+        glowMesh.position.set(x, y, z);
+        threeScene.add(glowMesh);
+
+        // Billboard Text Label Sprite
+        const sprite = createTextSprite(w, clusterMeta.hex, 20, 0.45);
+        sprite.position.set(x, y + 2.4, z);
+        sprite.visible = showLabels;
+        threeScene.add(sprite);
+
+        threeNodes.push({
+          word: w,
+          cluster: clusterKey,
+          clusterName: clusterMeta.name,
+          colorHex: clusterMeta.hex,
+          vec: dataMatrix[idx],
+          x, y, z,
+          mesh,
+          glowMesh,
+          sprite,
+          isCustom: !isCurated
+        });
+      });
+
+      // Update HUD count
+      document.getElementById('hud-token-count').textContent = threeNodes.length;
+
+      // Build nearest neighbor lines
+      if (showLines) build3DNearestLines();
+    }
+
+    function build3DNearestLines(focusNode = null) {
+      clear3DLines();
+      if (!showLines) return;
+
+      const lineMat = new THREE.LineBasicMaterial({
+        color: 0x38bdf8,
+        transparent: true,
+        opacity: focusNode ? 0.65 : 0.15,
+        blending: THREE.AdditiveBlending,
+        linewidth: 1
+      });
+
+      const targets = focusNode ? [focusNode] : threeNodes;
+
+      targets.forEach(nodeA => {
+        // Find top 3 nearest neighbors by vector cosine similarity
+        const neighbors = threeNodes
+          .filter(n => n !== nodeA)
+          .map(n => ({ node: n, sim: cosineSimilarity(nodeA.vec, n.vec) }))
+          .sort((a, b) => b.sim - a.sim)
+          .slice(0, focusNode ? 5 : 2);
+
+        neighbors.forEach(({ node: nodeB, sim }) => {
+          if (sim > 0.45 || focusNode) {
+            const points = [
+              new THREE.Vector3(nodeA.x, nodeA.y, nodeA.z),
+              new THREE.Vector3(nodeB.x, nodeB.y, nodeB.z)
+            ];
+            const geom = new THREE.BufferGeometry().setFromPoints(points);
+            const line = new THREE.Line(geom, lineMat);
+            threeLinesGroup.add(line);
+          }
+        });
+      });
+    }
+
+    function clear3DLines() {
+      while (threeLinesGroup.children.length > 0) {
+        const obj = threeLinesGroup.children[0];
+        threeLinesGroup.remove(obj);
+        if (obj.geometry) obj.geometry.dispose();
+      }
+    }
+
+    // Raycast Mouse Move
+    function onThreeMouseMove(event) {
+      const rect = threeRenderer.domElement.getBoundingClientRect();
+      threeMouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      threeMouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+      threeRaycaster.setFromCamera(threeMouse, threeCamera);
+      const meshes = threeNodes.map(n => n.mesh);
+      const intersects = threeRaycaster.intersectObjects(meshes);
+
+      const tooltip = document.getElementById('three-hover-tooltip');
+
+      if (intersects.length > 0) {
+        const hitMesh = intersects[0].object;
+        const node = threeNodes[hitMesh.userData.index];
+        if (node) {
+          // Position tooltip
+          const tooltipX = event.clientX - rect.left;
+          const tooltipY = event.clientY - rect.top;
+          tooltip.style.left = `${tooltipX}px`;
+          tooltip.style.top = `${tooltipY}px`;
+          tooltip.style.display = 'block';
+
+          document.getElementById('tooltip-title').textContent = node.word;
+          document.getElementById('tooltip-cluster').textContent = node.clusterName;
+          document.getElementById('tooltip-coords').textContent = `X: ${node.x.toFixed(1)} | Y: ${node.y.toFixed(1)} | Z: ${node.z.toFixed(1)}`;
+
+          // Find top 3 neighbors
+          const neighbors = threeNodes
+            .filter(n => n !== node)
+            .map(n => ({ word: n.word, sim: Math.round(cosineSimilarity(node.vec, n.vec) * 100) }))
+            .sort((a, b) => b.sim - a.sim)
+            .slice(0, 3);
+
+          document.getElementById('tooltip-nearest').innerHTML = `Nearest: ${neighbors.map(n => `<strong>${n.word}</strong> (${n.sim}%)`).join(', ')}`;
+          document.body.style.cursor = 'pointer';
+          return;
+        }
+      }
+
+      tooltip.style.display = 'none';
+      document.body.style.cursor = 'default';
+    }
+
+    // Raycast Click
+    function onThreeClick(event) {
+      const rect = threeRenderer.domElement.getBoundingClientRect();
+      threeMouse.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+      threeMouse.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+      threeRaycaster.setFromCamera(threeMouse, threeCamera);
+      const meshes = threeNodes.map(n => n.mesh);
+      const intersects = threeRaycaster.intersectObjects(meshes);
+
+      if (intersects.length > 0) {
+        const hitMesh = intersects[0].object;
+        const node = threeNodes[hitMesh.userData.index];
+        if (node) {
+          inspect3DNode(node);
+        }
+      }
+    }
+
+    function inspect3DNode(node) {
+      selected3DNode = node;
+
+      // Highlight nearest connection lines
+      build3DNearestLines(node);
+
+      // Open Side Inspector
+      const inspector = document.getElementById('three-side-inspector');
+      inspector.style.display = 'flex';
+
+      document.getElementById('insp-word-title').textContent = `"${node.word}"`;
+      document.getElementById('insp-cluster-name').textContent = `${node.clusterName} (${node.cluster})`;
+      document.getElementById('insp-cluster-name').style.color = node.colorHex;
+      document.getElementById('insp-coords-xyz').textContent = `X: ${node.x.toFixed(2)}, Y: ${node.y.toFixed(2)}, Z: ${node.z.toFixed(2)}`;
+
+      // Render 16-D vector bars
+      const barBox = document.getElementById('insp-vector-bars');
+      barBox.innerHTML = "";
+      node.vec.forEach((val, i) => {
+        const stick = document.createElement('div');
+        stick.className = "vector-bar-stick";
+        const h = Math.max(3, Math.round(Math.abs(val) * 48));
+        stick.style.height = `${h}px`;
+        stick.style.background = node.colorHex;
+        stick.title = `Dim ${i + 1}: ${val.toFixed(3)}`;
+        barBox.appendChild(stick);
+      });
+
+      // Render Top 5 Nearest Neighbors
+      const nList = document.getElementById('insp-nearest-list');
+      nList.innerHTML = "";
+
+      const neighbors = threeNodes
+        .filter(n => n !== node)
+        .map(n => ({ node: n, sim: Math.round(cosineSimilarity(node.vec, n.vec) * 100) }))
+        .sort((a, b) => b.sim - a.sim)
+        .slice(0, 5);
+
+      neighbors.forEach(({ node: n, sim }) => {
+        const item = document.createElement('div');
+        item.style.display = "flex";
+        item.style.justifyContent = "space-between";
+        item.style.alignItems = "center";
+        item.style.fontSize = "0.78rem";
+        item.style.padding = "0.25rem 0.4rem";
+        item.style.borderRadius = "var(--radius-sm)";
+        item.style.background = "rgba(255,255,255,0.04)";
+        item.innerHTML = `
+          <span style="font-weight: 700; color: #fff; cursor: pointer;" onclick="searchSpotlightWord('${n.word}')">${n.word}</span>
+          <span style="font-family: var(--font-mono); color: var(--accent-cyan); font-weight: 600;">${sim}%</span>
+        `;
+        nList.appendChild(item);
+      });
+
+      // Smoothly animate camera towards node
+      focusCameraOnCurrentNode();
+
+      showToast(`Inspecting embedding for "${node.word}"`);
+    }
+
+    function focusCameraOnCurrentNode() {
+      if (!selected3DNode) return;
+      const targetPos = new THREE.Vector3(selected3DNode.x, selected3DNode.y, selected3DNode.z);
+      threeControls.target.copy(targetPos);
+    }
+
+    function closeSideInspector() {
+      document.getElementById('three-side-inspector').style.display = 'none';
+      selected3DNode = null;
+      build3DNearestLines(null);
+    }
+
+    function toggleAutoRotate() {
+      isAutoRotating = !isAutoRotating;
+      threeControls.autoRotate = isAutoRotating;
+      document.getElementById('btn-autorotate-label').textContent = isAutoRotating ? "ON" : "OFF";
+      showToast(`Auto-rotation ${isAutoRotating ? 'enabled' : 'disabled'}`);
+    }
+
+    function toggleThreeLabels() {
+      showLabels = !showLabels;
+      threeNodes.forEach(n => {
+        if (n.sprite) n.sprite.visible = showLabels;
+      });
+      document.getElementById('label-toggle-state').textContent = showLabels ? "ON" : "OFF";
+    }
+
+    function toggleThreeLines() {
+      showLines = !showLines;
+      if (showLines) build3DNearestLines(selected3DNode);
+      else clear3DLines();
+      document.getElementById('lines-toggle-state').textContent = showLines ? "ON" : "OFF";
+    }
+
+    function toggleThreeGrid() {
+      showGrid = !showGrid;
+      threeGridHelper.visible = showGrid;
+      threeAxesGroup.visible = showGrid;
+    }
+
+    function reset3DCamera() {
+      threeControls.target.set(0, 0, 0);
+      threeCamera.position.set(0, 25, 65);
+      threeControls.update();
+      closeSideInspector();
+      showToast("Camera reset to default perspective.");
+    }
+
+    function filterThreeCluster() {
+      const cluster = document.getElementById('three-cluster-filter').value;
+      threeNodes.forEach(n => {
+        const visible = (cluster === 'all' || n.cluster === cluster);
+        n.mesh.visible = visible;
+        if (n.glowMesh) n.glowMesh.visible = visible;
+        if (n.sprite) n.sprite.visible = visible && showLabels;
+      });
+      build3DNearestLines(selected3DNode);
+    }
+
+    function searchSpotlightWord(presetWord) {
+      const query = (presetWord || document.getElementById('three-search-input').value || "").toLowerCase().trim();
+      if (!query) return;
+
+      const found = threeNodes.find(n => n.word.toLowerCase() === query);
+      if (found) {
+        inspect3DNode(found);
+      } else {
+        showToast(`Word "${query}" not found in current 3D space. Try injecting it!`);
+      }
+    }
+
+    function injectCustomWord3D() {
+      const input = document.getElementById('custom-3d-word-input').value.trim();
+      if (!input) {
+        showToast("Enter a word or phrase to inject!");
+        return;
+      }
+
+      // Split into unique words
+      const words = input.toLowerCase().match(/[a-zA-Z0-9]+/g);
+      if (!words || words.length === 0) return;
+
+      let addedCount = 0;
+      words.forEach(w => {
+        if (!active3DVocabWords.includes(w)) {
+          active3DVocabWords.push(w);
+          addedCount++;
+        }
+      });
+
+      if (addedCount > 0) {
+        rebuild3DScene();
+        showToast(`Synthesized & projected ${addedCount} new embedding(s) into 3D!`);
+        // Spotlight first injected word
+        searchSpotlightWord(words[0]);
+      } else {
+        showToast("Word already exists in 3D space!");
+        searchSpotlightWord(words[0]);
+      }
+      document.getElementById('custom-3d-word-input').value = "";
+    }
+
+    function reset3DToDefault() {
+      active3DVocabWords = Object.keys(CURATED_VOCAB_DB);
+      rebuild3DScene();
+      reset3DCamera();
+      showToast("Reset 3D embedding space to default 60+ curated vocabulary.");
+    }
+
+    function onThreeResize() {
+      const container = document.querySelector('.three-box-wrapper');
+      if (!container || !threeRenderer || !threeCamera) return;
+      const width = container.clientWidth;
+      const height = container.clientHeight;
+      threeCamera.aspect = width / height;
+      threeCamera.updateProjectionMatrix();
+      threeRenderer.setSize(width, height);
+    }
+
+    function animateThree() {
+      requestAnimationFrame(animateThree);
+      threeControls.update();
+
+      // Subtle particle float animation
+      if (threeParticles) {
+        threeParticles.rotation.y += 0.0004;
+      }
+
+      threeRenderer.render(threeScene, threeCamera);
+    }
+
+    /* ==========================================================================
+       7. SECTION 5: PLAYGROUND & PLOTLY VISUALIZATIONS ENGINE
+       ========================================================================== */
+
+    let currentPlaygroundTokens = [];
+    let currentPlaygroundVectors = [];
+    let activePlaygroundTab = 'pca2d';
+
+    function setPlaygroundInput(text) {
+      document.getElementById('play-input-text').value = text;
+      tokenizePlayground();
+    }
+
+    function loadPlaygroundSample() {
+      const samples = [
+        "Unbelievable transformations occur within neural language models when processing complex sequences.",
+        "Machine learning algorithms discover representations in high dimensional spaces.",
+        "Quantum computing utilizes superposition and entanglement to accelerate tensor operations."
+      ];
+      setPlaygroundInput(samples[Math.floor(Math.random() * samples.length)]);
+    }
+
+    function resetPlaygroundSection() {
+      document.getElementById('play-input-text').value = "";
+      document.getElementById('play-token-chips').innerHTML = "";
+      document.getElementById('play-stat-tokens').textContent = "0";
+      document.getElementById('play-stat-unique').textContent = "0";
+      document.getElementById('play-stat-avglen').textContent = "0.0";
+      document.getElementById('play-stat-ratio').textContent = "0.0x";
+      ['plotly-pca-2d', 'plotly-pca-3d', 'plotly-freq-bar', 'plotly-pos-timeline', 'plotly-sim-heatmap'].forEach(id => {
+        Plotly.purge(id);
+      });
+      showToast("Tokenizer playground reset.");
+    }
+
+    function tokenizePlayground() {
+      const text = document.getElementById('play-input-text').value.trim();
+      if (!text) {
+        showToast("Enter text in the playground to analyze!");
+        return;
+      }
+
+      const mode = document.querySelector('input[name="play-tokenizer-mode"]:checked').value;
+      const tokens = [];
+      let tokenIndex = 1;
+
+      if (mode === "word") {
+        // Word level tokenization
+        const regex = /([a-zA-Z0-9]+|[^\s\w])/g;
+        let m;
+        while ((m = regex.exec(text)) !== null) {
+          tokens.push({
+            str: m[0],
+            norm: m[0].toLowerCase(),
+            start: m.index,
+            end: m.index + m[0].length,
+            pos: tokenIndex++,
+            type: "word"
+          });
+        }
+      } else if (mode === "char") {
+        // Character level tokenization
+        for (let i = 0; i < text.length; i++) {
+          const ch = text[i];
+          if (ch === ' ') continue; // Skip space or keep as [SPACE]
+          tokens.push({
+            str: ch,
+            norm: ch.toLowerCase(),
+            start: i,
+            end: i + 1,
+            pos: tokenIndex++,
+            type: "char"
+          });
+        }
+      } else if (mode === "subword") {
+        // Educational Subword BPE / WordPiece style segmentation
+        const wordRegex = /([a-zA-Z0-9]+|[^\s\w])/g;
+        let wm;
+        while ((wm = wordRegex.exec(text)) !== null) {
+          const word = wm[0];
+          const lower = word.toLowerCase();
+
+          // Common prefixes & suffixes
+          const prefixes = ["un", "re", "in", "dis", "micro", "hyper", "super", "trans"];
+          const suffixes = ["able", "ing", "tion", "tions", "ment", "ness", "ity", "ized", "ize", "ly", "al"];
+
+          let subTokens = [];
+          let remainder = lower;
+
+          // Prefix check
+          for (const pre of prefixes) {
+            if (remainder.startsWith(pre) && remainder.length > pre.length + 2) {
+              subTokens.push({ text: word.substring(0, pre.length), isSub: false });
+              remainder = remainder.substring(pre.length);
+              break;
+            }
+          }
+
+          // Suffix check
+          let matchedSuffix = null;
+          for (const suf of suffixes) {
+            if (remainder.endsWith(suf) && remainder.length > suf.length + 2) {
+              matchedSuffix = suf;
+              remainder = remainder.substring(0, remainder.length - suf.length);
+              break;
+            }
+          }
+
+          if (remainder.length > 0) {
+            subTokens.push({ text: (subTokens.length > 0 ? "##" : "") + remainder, isSub: subTokens.length > 0 });
+          }
+
+          if (matchedSuffix) {
+            subTokens.push({ text: "##" + matchedSuffix, isSub: true });
+          }
+
+          if (subTokens.length === 0) {
+            subTokens.push({ text: word, isSub: false });
+          }
+
+          let curCharIdx = wm.index;
+          subTokens.forEach(st => {
+            const cleanLen = st.text.replace("##", "").length;
+            tokens.push({
+              str: st.text,
+              norm: st.text.toLowerCase(),
+              start: curCharIdx,
+              end: curCharIdx + cleanLen,
+              pos: tokenIndex++,
+              type: "subword"
+            });
+            curCharIdx += cleanLen;
+          });
+        }
+      }
+
+      currentPlaygroundTokens = tokens;
+
+      // Update Metrics
+      const totalTokens = tokens.length;
+      const uniqueTokens = new Set(tokens.map(t => t.norm)).size;
+      const totalChars = tokens.reduce((acc, t) => acc + t.str.length, 0);
+      const avgLen = totalTokens > 0 ? (totalChars / totalTokens).toFixed(1) : 0;
+      const compression = totalTokens > 0 ? (text.length / totalTokens).toFixed(1) : 0;
+
+      document.getElementById('play-stat-tokens').textContent = totalTokens;
+      document.getElementById('play-stat-unique').textContent = uniqueTokens;
+      document.getElementById('play-stat-avglen').textContent = avgLen;
+      document.getElementById('play-stat-ratio').textContent = compression + "x";
+
+      // Render Token Chips
+      const chipsBox = document.getElementById('play-token-chips');
+      chipsBox.innerHTML = "";
+      tokens.forEach((t, i) => {
+        const chip = document.createElement('div');
+        chip.className = "token-block-item";
+        chip.style.padding = "0.35rem 0.65rem";
+        chip.innerHTML = `
+          <span style="font-size: 0.9rem; font-weight: 700; color: #fff;">${t.str}</span>
+          <span style="font-size: 0.62rem; color: var(--accent-cyan); font-family: var(--font-mono);">#${i + 1}</span>
+        `;
+        chip.onclick = () => spotlightPlaygroundToken(i);
+        chipsBox.appendChild(chip);
+      });
+
+      // Synthesize Feature Vectors for Tokens
+      const allNormTokens = tokens.map(t => t.norm);
+      currentPlaygroundVectors = tokens.map(t => getWordEmbedding(t.norm, allNormTokens));
+
+      // Render Active Plotly Chart
+      renderActivePlaygroundPlot();
+
+      showToast(`Tokenized into ${totalTokens} ${mode} tokens!`);
+    }
+
+    function spotlightPlaygroundToken(idx) {
+      const token = currentPlaygroundTokens[idx];
+      if (!token) return;
+
+      const chips = document.querySelectorAll('#play-token-chips .token-block-item');
+      chips.forEach((c, i) => {
+        if (i === idx) c.classList.add('highlighted');
+        else c.classList.remove('highlighted');
+      });
+
+      document.getElementById('play-token-spotlight-label').textContent = 
+        `Spotlight: "${token.str}" (pos: ${token.pos}, chars: [${token.start}:${token.end}])`;
+    }
+
+    function switchPlayTab(tab) {
+      activePlaygroundTab = tab;
+      document.querySelectorAll('#sec-playground .tab-pill-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('#sec-playground .chart-panel-view').forEach(p => p.classList.remove('active'));
+
+      const map = {
+        pca2d: { btnIdx: 1, paneId: 'play-tab-pca2d', plotId: 'plotly-pca-2d' },
+        pca3d: { btnIdx: 2, paneId: 'play-tab-pca3d', plotId: 'plotly-pca-3d' },
+        freq: { btnIdx: 3, paneId: 'play-tab-freq', plotId: 'plotly-freq-bar' },
+        pos: { btnIdx: 4, paneId: 'play-tab-pos', plotId: 'plotly-pos-timeline' },
+        heatmap: { btnIdx: 5, paneId: 'play-tab-heatmap', plotId: 'plotly-sim-heatmap' }
+      };
+
+      const target = map[tab];
+      if (target) {
+        document.querySelector(`#sec-playground .tab-pill-btn:nth-child(${target.btnIdx})`).classList.add('active');
+        document.getElementById(target.paneId).classList.add('active');
+        renderActivePlaygroundPlot();
+      }
+    }
+
+    function renderActivePlaygroundPlot() {
+      if (currentPlaygroundTokens.length === 0) return;
+
+      if (activePlaygroundTab === 'pca2d') {
+        renderPlotly2D();
+      } else if (activePlaygroundTab === 'pca3d') {
+        renderPlotly3D();
+      } else if (activePlaygroundTab === 'freq') {
+        renderPlotlyFreq();
+      } else if (activePlaygroundTab === 'pos') {
+        renderPlotlyPositionTimeline();
+      } else if (activePlaygroundTab === 'heatmap') {
+        renderPlotlyHeatmap();
+      }
+    }
+
+    // 1. Plotly 2D PCA Scatter Plot
+    function renderPlotly2D() {
+      const proj2D = performPCA(currentPlaygroundVectors, 2);
+      const x = proj2D.map(p => p[0]);
+      const y = proj2D.map(p => p[1]);
+      const text = currentPlaygroundTokens.map(t => `Token: "${t.str}"<br>Index: #${t.pos}<br>Length: ${t.str.length}`);
+      const lengths = currentPlaygroundTokens.map(t => t.str.length);
+
+      const trace = {
+        x: x,
+        y: y,
+        text: text,
+        mode: 'markers+text',
+        textposition: 'top center',
+        textfont: { family: 'Space Grotesk', color: '#ffffff', size: 12 },
+        marker: {
+          size: 14,
+          color: lengths,
+          colorscale: [
+            [0, '#00f5ff'],
+            [0.5, '#3b82f6'],
+            [1.0, '#ec4899']
+          ],
+          colorbar: { title: 'Token Length', tickfont: { color: '#94a3b8' } },
+          line: { color: '#ffffff', width: 1.5 }
+        },
+        type: 'scatter'
+      };
+
+      const layout = {
+        title: { text: '2D PCA Token Embedding Projection (Principal Axes 1 & 2)', font: { color: '#ffffff', family: 'Space Grotesk' } },
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        font: { family: 'Inter, sans-serif', color: '#94a3b8' },
+        margin: { l: 50, r: 50, t: 60, b: 50 },
+        xaxis: { title: 'Principal Component 1 (PC1)', gridcolor: 'rgba(255,255,255,0.06)', zerolinecolor: 'rgba(255,255,255,0.15)' },
+        yaxis: { title: 'Principal Component 2 (PC2)', gridcolor: 'rgba(255,255,255,0.06)', zerolinecolor: 'rgba(255,255,255,0.15)' },
+        hovermode: 'closest'
+      };
+
+      Plotly.newPlot('plotly-pca-2d', [trace], layout, { responsive: true, displayModeBar: true });
+    }
+
+    // 2. Plotly 3D PCA Scatter Plot
+    function renderPlotly3D() {
+      const proj3D = performPCA(currentPlaygroundVectors, 3);
+      const x = proj3D.map(p => p[0]);
+      const y = proj3D.map(p => p[1]);
+      const z = proj3D.map(p => p[2]);
+      const text = currentPlaygroundTokens.map(t => `Token: "${t.str}"<br>Pos: #${t.pos}`);
+
+      const trace = {
+        x: x,
+        y: y,
+        z: z,
+        text: text,
+        mode: 'markers+text',
+        textposition: 'top center',
+        textfont: { family: 'Space Grotesk', color: '#ffffff', size: 11 },
+        marker: {
+          size: 6,
+          color: x,
+          colorscale: 'Viridis',
+          opacity: 0.9,
+          line: { color: '#ffffff', width: 0.5 }
+        },
+        type: 'scatter3d'
+      };
+
+      const layout = {
+        title: { text: '3D PCA Token Embedding Space (Plotly Orbit)', font: { color: '#ffffff', family: 'Space Grotesk' } },
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        font: { family: 'Inter, sans-serif', color: '#94a3b8' },
+        margin: { l: 10, r: 10, t: 40, b: 10 },
+        scene: {
+          xaxis: { title: 'PC1', gridcolor: 'rgba(255,255,255,0.1)', backgroundcolor: 'rgba(0,0,0,0)' },
+          yaxis: { title: 'PC2', gridcolor: 'rgba(255,255,255,0.1)', backgroundcolor: 'rgba(0,0,0,0)' },
+          zaxis: { title: 'PC3', gridcolor: 'rgba(255,255,255,0.1)', backgroundcolor: 'rgba(0,0,0,0)' }
+        }
+      };
+
+      Plotly.newPlot('plotly-pca-3d', [trace], layout, { responsive: true, displayModeBar: true });
+    }
+
+    // 3. Plotly Token Frequency Bar Chart
+    function renderPlotlyFreq() {
+      const freqMap = {};
+      currentPlaygroundTokens.forEach(t => {
+        freqMap[t.norm] = (freqMap[t.norm] || 0) + 1;
+      });
+
+      const sorted = Object.entries(freqMap).sort((a, b) => b[1] - a[1]);
+      const words = sorted.map(s => s[0]);
+      const counts = sorted.map(s => s[1]);
+
+      const trace = {
+        x: words,
+        y: counts,
+        type: 'bar',
+        marker: {
+          color: counts,
+          colorscale: [
+            [0, '#3b82f6'],
+            [1.0, '#00f5ff']
+          ],
+          line: { color: 'rgba(255,255,255,0.2)', width: 1 }
+        }
+      };
+
+      const layout = {
+        title: { text: 'Token Frequency Distribution (Ranked)', font: { color: '#ffffff', family: 'Space Grotesk' } },
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        font: { family: 'Inter, sans-serif', color: '#94a3b8' },
+        margin: { l: 50, r: 30, t: 50, b: 70 },
+        xaxis: { title: 'Distinct Token String', gridcolor: 'rgba(255,255,255,0.06)', tickangle: -30 },
+        yaxis: { title: 'Frequency Count', gridcolor: 'rgba(255,255,255,0.06)', dtick: 1 }
+      };
+
+      Plotly.newPlot('plotly-freq-bar', [trace], layout, { responsive: true, displayModeBar: false });
+    }
+
+    // 4. Plotly Token Position Timeline
+    function renderPlotlyPositionTimeline() {
+      const tokenLabels = currentPlaygroundTokens.map(t => `${t.pos}. "${t.str}"`);
+      const starts = currentPlaygroundTokens.map(t => t.start);
+      const durations = currentPlaygroundTokens.map(t => t.end - t.start);
+
+      const trace = {
+        y: tokenLabels.reverse(),
+        x: durations.reverse(),
+        base: starts.reverse(),
+        type: 'bar',
+        orientation: 'h',
+        marker: {
+          color: '#a855f7',
+          line: { color: '#00f5ff', width: 1.5 }
+        },
+        hoverinfo: 'text',
+        hovertext: currentPlaygroundTokens.map(t => `Token: "${t.str}"<br>Span: [${t.start} : ${t.end}] (${t.end - t.start} chars)`).reverse()
+      };
+
+      const layout = {
+        title: { text: 'Token Sequence Timeline (Character Offsets [start : end])', font: { color: '#ffffff', family: 'Space Grotesk' } },
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        font: { family: 'Inter, sans-serif', color: '#94a3b8' },
+        margin: { l: 120, r: 30, t: 50, b: 50 },
+        xaxis: { title: 'Sentence Character Index Offset', gridcolor: 'rgba(255,255,255,0.06)' },
+        yaxis: { automargin: true }
+      };
+
+      Plotly.newPlot('plotly-pos-timeline', [trace], layout, { responsive: true, displayModeBar: false });
+    }
+
+    // 5. Plotly Token-to-Token Cosine Heatmap
+    function renderPlotlyHeatmap() {
+      const n = Math.min(25, currentPlaygroundTokens.length);
+      const labels = currentPlaygroundTokens.slice(0, n).map(t => t.str);
+      const z = [];
+
+      for (let i = 0; i < n; i++) {
+        const row = [];
+        for (let j = 0; j < n; j++) {
+          const sim = cosineSimilarity(currentPlaygroundVectors[i], currentPlaygroundVectors[j]);
+          row.push(parseFloat(sim.toFixed(3)));
+        }
+        z.push(row);
+      }
+
+      const trace = {
+        z: z,
+        x: labels,
+        y: labels,
+        type: 'heatmap',
+        colorscale: [
+          [0.0, '#060913'],
+          [0.3, '#1e1b4b'],
+          [0.6, '#3b82f6'],
+          [0.85, '#00f5ff'],
+          [1.0, '#ffffff']
+        ],
+        hoverongaps: false
+      };
+
+      const layout = {
+        title: { text: 'Token Pairwise Cosine Similarity Matrix (NxN)', font: { color: '#ffffff', family: 'Space Grotesk' } },
+        paper_bgcolor: 'rgba(0,0,0,0)',
+        plot_bgcolor: 'rgba(0,0,0,0)',
+        font: { family: 'Inter, sans-serif', color: '#94a3b8' },
+        margin: { l: 80, r: 40, t: 60, b: 80 },
+        xaxis: { tickangle: -40 },
+        yaxis: { automargin: true }
+      };
+
+      Plotly.newPlot('plotly-sim-heatmap', [trace], layout, { responsive: true, displayModeBar: true });
+    }
+
+    /* ==========================================================================
+       8. MODAL, TOAST & APP INITIALIZATION
+       ========================================================================== */
+
+    function openTheoryModal() {
+      document.getElementById('theory-modal').classList.add('open');
+      document.body.style.overflow = 'hidden';
+    }
+
+    function closeTheoryModal() {
+      document.getElementById('theory-modal').classList.remove('open');
+      document.body.style.overflow = '';
+    }
+
+    function showToast(msg) {
+      const tray = document.getElementById('toast-tray');
+      const pill = document.createElement('div');
+      pill.className = "toast-pill";
+      pill.innerHTML = `<i class="fa-solid fa-circle-check" style="color: var(--accent-cyan);"></i> ${msg}`;
+      tray.appendChild(pill);
+      setTimeout(() => {
+        if (pill.parentNode) pill.parentNode.removeChild(pill);
+      }, 3000);
+    }
+
+    // Window scroll navigation active pill sync
+    window.addEventListener('scroll', () => {
+      const sections = ['sec-vocab', 'sec-tokens', 'sec-similarity', 'sec-3d-space', 'sec-playground'];
+      const scrollPos = window.scrollY + 120;
+
+      sections.forEach(id => {
+        const el = document.getElementById(id);
+        if (el) {
+          const top = el.offsetTop;
+          const height = el.offsetHeight;
+          if (scrollPos >= top && scrollPos < top + height) {
+            document.querySelectorAll('.nav-pill-btn').forEach(btn => {
+              if (btn.getAttribute('href') === `#${id}`) btn.classList.add('active');
+              else btn.classList.remove('active');
+            });
+          }
+        }
+      });
+    });
+
+    // Initialize all sections on DOM ready
+    window.onload = function() {
+      // 1. Init Vocabulary
+      buildVocabulary();
+
+      // 2. Init Tokens
+      generateTokensPipeline();
+
+      // 3. Init Similarity
+      compareSentences();
+
+      // 4. Init Three.js 3D Space
+      initThreeJS();
+
+      // 5. Init Playground
+      tokenizePlayground();
+
+      showToast("NEUROLEX 3D NLP Laboratory initialized!");
+    };
+  </script>
+</body>
+</html>
